@@ -1,0 +1,13 @@
+numpy
+pandas
+matplotlib
+SimpleITK
+scikit-learn
+scikit-image
+pydicom
+ipykernel
+viz
+
+# torch
+torch
+torchvision
