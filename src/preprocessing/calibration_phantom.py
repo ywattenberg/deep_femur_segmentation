@@ -9,9 +9,9 @@ import multiprocessing
 import time
 from functools import partial
 
-def get_rod_coordiantes(img, index, n_of_rods=6):
+def get_rod_coordiantes(image, index, n_of_rods=4):
     """
-    Given a single img it returns the centers and radii of the rods
+    Given a image series it returns the centers and radii of the rods
 
     Parameters
     ----------
@@ -50,6 +50,8 @@ def get_rod_coordiantes(img, index, n_of_rods=6):
     stop_6  = 50
     step_6  = 1
     min_circle_distance = 50
+
+    img = image.GetArrayFromImage(image[:,:,index])
 
     edges = canny(img, sigma=sigma, low_threshold=low_threshold, high_threshold=high_threshold)
     
@@ -90,7 +92,7 @@ def get_rod_coordiantes(img, index, n_of_rods=6):
 
     return index, cx, cy, radii
 
-def get_rod_coordiantes_list(images, n_of_rods=6, threads=None, step_size=1):
+def get_rod_coordiantes_list(images, n_of_rods=4, threads=None):
     """
     Given a list of images it returns the centers and radii of the rods at every `stepsize` images using multiprocessing
 
@@ -102,8 +104,6 @@ def get_rod_coordiantes_list(images, n_of_rods=6, threads=None, step_size=1):
         Number of expected rods (i.e. circles)
     threads : integer
         Number of threads to use for multiprocessing. If None, the number of threads is set to the number of cores of the CPU
-    step_size : integer
-        Distance between the images to be processed. If None, all the images are processed
 
     Returns
     -------
@@ -114,16 +114,9 @@ def get_rod_coordiantes_list(images, n_of_rods=6, threads=None, step_size=1):
 
     if threads is None:
         threads = multiprocessing.cpu_count()
-    if step_size is None or step_size > len(images) or step_size < 1:
-        step_size = 1
-
-    # create a list of images to be processed
-    images_to_process = images[::step_size]
-
-    map_func = partial(get_rod_coordiantes, n_of_rods=n_of_rods)
 
     with multiprocessing.Pool(threads) as p:
-        results = p.starmap(map_func, zip(images_to_process, range(len(images_to_process))))
+        results = p.starmap(get_rod_coordiantes, zip([images] *images.GetDepth(), range(images.GetDepth())))
 
     return results
 
