@@ -274,7 +274,68 @@ def reorient_PCCT_image(image : sitk.Image):
     image = array_to_image(array, image.GetSpacing(), image.GetOrigin(), image.GetDirection())
     return image
 
+def calculate_threshold_from_fraction(image: sitk.Image, fraction : float, sparse : bool = False):
+    """
+    This function calculates the threshold value s.t. a given fraction of the pixels are below the threshold value.
 
+    If sparse is set to True, the function will only calculate the threshold value for every 50th slice of the image. This is to speed up the calculation.
+
+    Parameters
+    ----------
+    image : sitk.Image
+        The image to calculate the threshold value for.
+    fraction : float
+        The fraction of the pixels that should be above the threshold value.
+    sparse : bool, optional
+        If True, only calculate the threshold value for every 50th slice of the image, by default False
+
+    Returns
+    -------
+    int
+        The threshold value.
+    """
+    # Get the image as a numpy array
+    if sparse:
+        array = image_to_array(image[:,:,::50])
+    else:
+        array = image_to_array(image)
+    # Sort the array
+    array = np.sort(array.flatten())
+    # Calculate the threshold value
+    threshold = array[int(len(array) * fraction)]
+    return threshold
+
+def threshold_image(image: sitk.Image, fraction: float = 0.7, sparse: bool = True):
+    """
+    This function thresholds an image s.t. `fraction` of pixels are set to `0`..
+    While all pixels above the threshold are left unchanged.
+    By default the function only calculates the threshold value for every 50th slice of the image. This is to speed up the calculation and can be changed using the `sparse` parameter.
+
+    Parameters
+    ----------
+    image : sitk.Image
+        The image to threshold.
+    fraction : float, optional
+        The fraction of pixels that should be above the threshold, by default 0.7
+    sparse : bool, optional
+        If True, only calculate the threshold value for every 50th slice of the image, by default True
+    
+    Returns
+    -------
+    sitk.Image
+        The thresholded image.
+    """
+    # We use a fraction rather than a set threshold value to make the function more robust to different images and scanners
+
+    # Calculate the threshold value
+    threshold = calculate_threshold_from_fraction(image, fraction, sparse=sparse)
+    # Get the image as a numpy array
+    array = image_to_array(image)
+    # Threshold the array
+    array[array < threshold] = 0
+    # Convert the array back to an image
+    image = array_to_image(array, image.GetSpacing(), image.GetOrigin(), image.GetDirection())
+    return image
         
 
     
