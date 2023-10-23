@@ -162,3 +162,5 @@ cython_debug/
 # Dataset and Image files
 data/
 
+# Elastix installation files
+elastix

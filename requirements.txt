@@ -2,12 +2,15 @@ numpy
 pandas
 matplotlib
 SimpleITK
+itkwidgets
+itk-elastix
 scikit-learn
 scikit-image
 pydicom
 ipykernel
-viz
+#viz
+dicom2nifti
 
-# torch
+#pytorch
 torch
 torchvision
