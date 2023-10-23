@@ -9,7 +9,7 @@ import multiprocessing
 import time
 from functools import partial
 
-def get_rod_coordiantes(image, index, n_of_rods=4):
+def _get_rod_coordinates(image, index, n_of_rods=4):
     """
     Given a image series it returns the centers and radii of the rods
 
@@ -38,7 +38,6 @@ def get_rod_coordiantes(image, index, n_of_rods=4):
 
     """
     # This function is a lifted from code by Serena Bonaretti (github.com/sbonaretti)
-
     # parameters
     sigma = 3
     low_threshold  = 1
@@ -51,7 +50,7 @@ def get_rod_coordiantes(image, index, n_of_rods=4):
     step_6  = 1
     min_circle_distance = 50
 
-    img = image.GetArrayFromImage(image[:,:,index])
+    img = sitk.GetArrayFromImage(image[:,:,index])
 
     edges = canny(img, sigma=sigma, low_threshold=low_threshold, high_threshold=high_threshold)
     
@@ -92,7 +91,7 @@ def get_rod_coordiantes(image, index, n_of_rods=4):
 
     return index, cx, cy, radii
 
-def get_rod_coordiantes_list(images, n_of_rods=4, threads=None):
+def get_rod_coordinates_mp(images, n_of_rods=4, threads=None):
     """
     Given a list of images it returns the centers and radii of the rods at every `stepsize` images using multiprocessing
 
@@ -116,86 +115,8 @@ def get_rod_coordiantes_list(images, n_of_rods=4, threads=None):
         threads = multiprocessing.cpu_count()
 
     with multiprocessing.Pool(threads) as p:
-        results = p.starmap(get_rod_coordiantes, zip([images] *images.GetDepth(), range(images.GetDepth())))
+        results = p.starmap(_get_rod_coordinates, zip([images] *images.GetDepth(), range(images.GetDepth())))
 
     return results
-
-def calculate_mean_intensity(image, calibration_rods):
-    """
-    Given a single image and the coordinates of the calibration rods, it returns the mean intensity of the rods
-
-    Parameters
-    ----------
-    image : numpy array (2D)
-        Grey level image, containing the Bone Density Calibration Phantom with 6 rods
-    calibration_rods : list of tuples
-        Contains the coordinates of the centers (x and y) of the HA rods and their radii
-
-    Returns
-    -------
-    all_intensities : list of floats
-        Mean grey level of the rods
-    """
-    
-    index, all_cx, all_cy, all_radii = calibration_rods
-
-    all_intensities = []
-    
-    for cx, cy, radius in zip(all_cx, all_cy, all_radii):
-        rod_intensities = []
-
-        # Reduce radius to 70% of the original to avoid boundary effects
-        radius = int(radius * 0.70)
-        radius_squared = radius**2        
-
-        for i in range (cx-radius, cx+radius):
-            for j in range (cy-radius, cy+radius):
-                # calculate the distance from the center and square it
-                dx = i-cx
-                dy = j-cy
-                distance_squared = dx * dx + dy * dy
-
-                # if the pixel is within the rod circle with reduced radius
-                if distance_squared < radius_squared:
-                    # get its intensity and append it to 
-                    rod_intensities.append(image[j,i])
-        all_intensities.append(np.mean(rod_intensities))
-    
-    return index, all_intensities
-
-def calculate_mean_intensity_list(images, calibration_rods_list, threads=None, step_size=1):
-    """
-    Given a list of images and the coordinates of the calibration rods, it returns the mean intensity of the rods at every `stepsize` images using multiprocessing
-
-    Parameters
-    ----------
-    images : list of numpy arrays (2D)
-        Grey level images, containing the Bone Density Calibration Phantom with 6 rods
-    calibration_rods_list : list of tuples
-        Contains the coordinates of the centers (x and y) of the HA rods and their radii for each image (This means that the list has the same length as the list of images)
-    threads : integer
-        Number of threads to use for multiprocessing. If None, the number of threads is set to the number of cores of the CPU
-    step_size : integer
-        Distance between the images to be processed. If None, all the images are processed
-
-    Returns
-    -------
-    results: list of lists
-        Each sub-list contains the mean intensities of the rods in the slice
-    """
-    assert len(images) == len(calibration_rods_list), f"The number of images ({len(images)}) and the number of calibration rods lists ({len(calibration_rods_list)}) must be the same"
-
-    if threads is None:
-        threads = multiprocessing.cpu_count()
-    if step_size is None or step_size > len(images) or step_size < 1:
-        step_size = 1
-    # create a list of images to be processed
-    images_to_process = images[::step_size]
-    calibration_rods_list_to_process = calibration_rods_list[::step_size]
-    with multiprocessing.Pool(threads) as p:
-        results = p.starmap(calculate_mean_intensity, zip(images_to_process, calibration_rods_list_to_process))
-
-    return results
-
 
 

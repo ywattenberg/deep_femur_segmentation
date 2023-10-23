@@ -4,8 +4,8 @@ import os
 import logging
 import skimage
 
-from ..utils import read_dicom_series, image_to_array, array_to_image
-from .calibration_phantom import get_rod_coordiantes_mp
+from utils import read_dicom_series, image_to_array, array_to_image
+from calibration_phantom import get_rod_coordinates_mp
 
 def downsample_image(image: sitk.Image, factor:int):
     """
@@ -59,7 +59,7 @@ def reverse_slice_order(image: sitk.Image):
     # Get the image as a numpy array
     image_array = image_to_array(image)
     # Reverse the order of the slices
-    image_array = image_array[::-1]
+    image_array = image_array[:,:,::-1]
     # Convert the numpy array back to an itk image
     new_direction = image.GetDirection()
     image = array_to_image(image_array, image.GetSpacing(), image.GetOrigin(), image.GetDirection())
@@ -81,7 +81,8 @@ def cutout_cast_HR_pQCT(image: sitk.Image, fill_value: int = None):
     sitk.Image
         The image with the cast cut out.
     """
-    first_slice = sitk.GetArrayFromImage(image[:,:,0])
+    array = image_to_array(image)
+    first_slice = array[:,:,0]
     max_value = np.max(first_slice)
     min_value = np.min(first_slice)
 
@@ -89,10 +90,10 @@ def cutout_cast_HR_pQCT(image: sitk.Image, fill_value: int = None):
     if min_value != 0:
         logging.warning("The pixel values of the image are not normalized to a range of [0,x]. This might cause problems when cutting out the cast.")
         normalized = False
-        threshold = max_value * 0.3
+        threshold = max_value * 0.1
     else:
         # If the image is normalized to a range of [0,x] we can use a higher threshold
-        threshold = max_value * 0.6
+        threshold = max_value * 0.2
         normalized = True
 
 
@@ -105,14 +106,14 @@ def cutout_cast_HR_pQCT(image: sitk.Image, fill_value: int = None):
     inverse_mask = np.logical_not(mask)
 
     if not normalized and fill_value is None:
-        logging.warning("The image is not normalized and no fill value is given. This might cause problems when cutting out the cast.")
+        logging.warning("The image is not normalized and no fill value is given. Using the minimum of voxel value as fill value.")
          
         # average the values of the first slice without the cast
-        fill_value = np.mean(first_slice[inverse_mask == 1])
+        fill_value = np.mean(first_slice[inverse_mask])
     
     # Set the values of the cast to the fill value for every slice
-    array = image_to_array(image)
-    mask = np.tile(mask, (array.shape[2], 1, 1)).transpose(2,1,0)
+    
+    mask = np.tile(mask, (array.shape[2], 1, 1)).transpose(1,2,0)
     array[mask == 1] = fill_value
 
     # Convert the array back to an image
@@ -141,19 +142,22 @@ def cutout_calibration_phantom(image : sitk.Image, calibration_rods: list = None
 
     if calibration_rods is None:
         # Detect the calibration rods in every 50th slice of the image (for speed) as the coordinates of the rods are the relative stable in the z-direction
-        calibration_rods = get_rod_coordiantes_mp(image[:,:,::50])
+        calibration_rods = get_rod_coordinates_mp(image[:,:,::50])
 
     # We assume that the calibration phantom array is of the form [[x,y,radius], [x,y,radius], ...]
     # As a cutoff point we use the mean of the first and last rod y coordinate averaged in z direction
     # plus a small offset
-    cutoff = int(np.mean([calibration_rods[0][1], calibration_rods[-1][1]])* 1.05)
+    mean_y = 0
+    for rod in calibration_rods:
+        mean_y += rod[2][0] + rod[2][-1]
+    mean_y = (mean_y*0.5) / len(calibration_rods)
+    cutoff = int(mean_y* 0.87)
     image = image[:,:cutoff,:]
     return image
 
-def outlier_elimination(image: sitk.Image, mass_threshold: float = 0.1, fill_value: int = None):
+def outlier_elimination(image: sitk.Image, new_max_value: int = 100_000_000, fill_value: int = None):
     """
     This function eliminates outlier voxels from an image. 
-    To do this we fit a Gaussian distribution to the image and eliminate all voxels that are more than `mass_threshold` standard deviations away from the mean. We only eliminate voxels on the positive side of the distribution as low response voxels are unlikely to be outliers.
 
     Parameters
     ----------
@@ -167,30 +171,73 @@ def outlier_elimination(image: sitk.Image, mass_threshold: float = 0.1, fill_val
     sitk.Image
         The image with the outliers eliminated.
     """
-
-    # Get the image as a numpy array
-    array = image_to_array(image)
-
-    # Fit a Gaussian distribution to the image
-    mean = np.mean(array)
-    std = np.std(array)
-    # Eliminate all voxels that are more than `mass_threshold` standard deviations away from the mean
-    mask = array > mean + mass_threshold*std
-
-    if fill_value is None:
-        # average the values of the first slice without the cast
-        fill_value = np.mean(array[mask == 0])
-
-    # Set the values of the outliers to the fill value
-    array[mask == 1] = fill_value
     
+
+    new_max_value = 10_000
+    ratio         = 0.0
+    num_outliers  = 0
+    num_iter      = 0
+    max_num_iter  = 100
+    thresh        = 0.00001
+
+    # get image characteristics for numpy-SimpleITK conversion
+    spacing   = image.GetSpacing()
+    origin    = image.GetOrigin ()
+    direction = image.GetDirection()
+
+    # convert image from SimpleITK to numpy
+    img_py = sitk.GetArrayFromImage(image)
+
+    # get image max and min values
+    max_value = np.max(img_py)
+    min_value = np.min(img_py)
+
+    if min_value < 0:
+        img_py = img_py - min_value
+        max_value = np.max(img_py)
+        min_value = np.min(img_py)
+
+    # set other variables
+    cut_value = max_value
+    num_total = image.GetNumberOfPixels()
+
+    # calculate cut_value
+    while ((ratio < thresh) and (num_iter < max_num_iter)):
+        print(num_iter)
+        print(ratio)
+        num_iter     = num_iter + 1
+        num_outliers = 0
+
+        # calculate cut_value
+        cut_value    = (cut_value + min_value) * 0.95
+
+        # get the number of voxels that are above the cut_value (outliers)
+        outliers    = img_py[img_py > cut_value]
+        num_outliers = num_outliers + len(outliers)
+
+        # calculate the new proportion of outlier voxels over the total number of voxles
+        ratio = num_outliers / num_total
+
+    # assign new voxel values
+    img_py[img_py < cut_value] = img_py[img_py < cut_value] / cut_value * new_max_value
+    img_py[img_py > cut_value] = new_max_value
+
+    # back to SimpleITK
+    image = sitk.GetImageFromArray (img_py)
+    image.SetSpacing  (spacing)
+    image.SetOrigin   (origin)
+    image.SetDirection(direction)
+
+    return image
+    # array[array > cut_off] = new_max_value
+
     # Convert the array back to an image
     image = array_to_image(array, image.GetSpacing(), image.GetOrigin(), image.GetDirection())
 
     return image
 
 
-def intensity_normalization(image: sitk.Image, lower_bound: int = 0, upper_bound: int = 1000):
+def intensity_normalization(image: sitk.Image, lower_bound: int = 0, upper_bound: int = 2000):
     """
     This function normalizes the intensity of an image to a given range. This is useful when the intensity of the image is not normalized.
 
@@ -217,6 +264,14 @@ def intensity_normalization(image: sitk.Image, lower_bound: int = 0, upper_bound
     # Convert the array back to an image
     image = array_to_image(array, image.GetSpacing(), image.GetOrigin(), image.GetDirection())
     
+    return image
+
+
+def reorient_PCCT_image(image : sitk.Image):
+    array = image_to_array(image)
+    array = array[:,::-1,::-1]
+    array = np.rot90(array, k=-1)
+    image = array_to_image(array, image.GetSpacing(), image.GetOrigin(), image.GetDirection())
     return image
 
 

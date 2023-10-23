@@ -23,8 +23,6 @@ def calibrate_image_slice(image, rod_coordinates):
     return m*image + b
 
 
-
-
 def calibrate_image_list(images, rod_coordinates, threads=None):
     """
     Calibrates a list of images to using linear regression to the nominal values of the rods in the calibration phantom
@@ -46,6 +44,7 @@ def calibrate_image_list(images, rod_coordinates, threads=None):
         results = pool.starmap(calibrate_image_slice, zip(images, rod_coordinates))
     
     return results
+
 
 def morph_mask_2D(image, radius=5):
     filtered = sitk.GetImageFromArray(image.astype(np.uint8)*255)
@@ -105,6 +104,7 @@ def cut_calibration_phantom(image, rod_coordinates, buffer=0.2):
     image = image[:int(cut_off), :]
     return image
 
+
 def calc_cutoff_coordinate(rod_coordinates, buffer=0.2):
     all_cy = rod_coordinates[2]
     all_radii = rod_coordinates[3]
@@ -113,6 +113,7 @@ def calc_cutoff_coordinate(rod_coordinates, buffer=0.2):
     radius = (all_radii[0] )#+ all_radii[-1])/2
     cut_off = cy - radius - buffer*radius
     return cut_off
+
 
 def cut_images(images, rod_coordinate_list, cut_above=0, buffer=0.2):
     """
@@ -141,3 +142,4 @@ def cut_images(images, rod_coordinate_list, cut_above=0, buffer=0.2):
     avg_cutoff = np.mean([calc_cutoff_coordinate(rod_coordinates, buffer=buffer) for rod_coordinates in rod_coordinate_list])
     
     return images[:, :int(avg_cutoff), :]
+
