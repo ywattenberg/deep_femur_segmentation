@@ -4,7 +4,7 @@ import os
 import logging
 import shutil
 
-from utils import read_dicom_series, image_to_array, array_to_image
+from .utils import read_dicom_series, image_to_array, array_to_image
 
 
 def split_series(path: str, num_of_parts: int):
