@@ -10,26 +10,40 @@ from skimage.util import random_noise
 class FemurImageDataset(Dataset):
     """Femur Image Dataset"""
 
-    def __init__(self, csv_path, base_path=None, image_transform=None, PCCT_transform=None,  use_accelerator=True, number_of_context_slices=5, add_channel_dim=True) -> None:
+    def __init__(self, config, split) -> None:
         super().__init__()
-        self.context_csv = csv_path
-        self.PCCT_transform = PCCT_transform
-        self.number_of_context_slices = number_of_context_slices
-        self.add_channel_dim = add_channel_dim
+        assert type(config) == dict, "Config must be a dictionary."
+        assert "context csv path" in config, "Config must contain a context csv path."
+        assert split in ["train", "val", "test"], "Split must be one of [train, val, test]."
+        self._config = config
+        context_csv = pd.read_csv(config["context csv path"])
 
-        if image_transform is None:
-            self.image_transform = get_image_transform()
+        if "base path" in config:
+            base_path = config["base path"]
+
+        if "output size" in config:
+            self.output_size = config["output size"]
         else:
-            self.image_transform = image_transform
+            self.output_size = [64, 64, 64] # Default output size in form [x, y, z]
+        
+        if "use accelerator" in config:
+            self.use_accelerator = config["use accelerator"]
+        else:
+            self.use_accelerator = True
 
-        if use_accelerator:
+        if self.use_accelerator:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             if self.device == torch.device("cpu"):
                 self.device = torch.device("mps" if torch.backends.mps.available() else "cpu")
         else:
             self.device = torch.device("cpu")
+
+        if "transform" in config:
+            self.transform = get_image_transform(split)
+        if "augmentation" in config:
+            self.augmentation = get_image_augmentation(split)
         
-        self.sample_paths = pd.read_csv(csv_path)
+        self.sample_paths = pd.read_csv(context_csv)
         self.PCCT_paths = self.sample_paths["PCCT_path"]
         self.HRpQCT_paths = self.sample_paths["HRpQCT_path"]
         if base_path is not None:
@@ -48,6 +62,7 @@ class FemurImageDataset(Dataset):
 
             self.sample_from_range[HRpQCT_folder] = (self.length, self.length + files_in_folder, i)
             self.length += files_in_folder
+        self.length -= 2 * self.output_size[-1]
 
 
             
@@ -63,8 +78,7 @@ class FemurImageDataset(Dataset):
         # Make sure that the range is valid
 
         HRpQCT_folder = [os.path.join(HRpQCT_folder, file) for file in os.listdir(HRpQCT_folder)]
-        HRpQCT_image = np.load(HRpQCT_folder[start + self.number_of_context_slices])["arr_0"]
-        
+        HRpQCT_images = []
 
         to_extend_start, to_extend_back = (0,0)
         if start < 0:
@@ -74,15 +88,17 @@ class FemurImageDataset(Dataset):
         if end > len(PCCT_folder):
             to_extend_back = end - len(PCCT_folder)
             end = len(PCCT_folder)
-        
+        assert to_extend_back == 0, "Not implemented yet."
+        assert to_extend_start == 0, "Not implemented yet."
 
+        # TODO: Multithreading? Time this.
         for i in range(start, end):
             PCCT_images.append(np.load(PCCT_folder[i])["arr_0"])
-        PCCT_images = [np.zeros_like(PCCT_images[0]) for _ in range(to_extend_start)] + PCCT_images
-        PCCT_images = PCCT_images + [np.zeros_like(PCCT_images[0]) for _ in range(to_extend_back)]
+            HRpQCT_images.append(np.load(HRpQCT_folder[i])["arr_0"])
+        # PCCT_images = [np.zeros_like(PCCT_images[0]) for _ in range(to_extend_start)] + PCCT_images
+        # PCCT_images = PCCT_images + [np.zeros_like(PCCT_images[0]) for _ in range(to_extend_back)]
 
-
-        return PCCT_images, HRpQCT_image
+        return PCCT_images, HRpQCT_images
     
     
     def __getitem__(self, index):
@@ -101,28 +117,23 @@ class FemurImageDataset(Dataset):
 
         PCCT_path = self.PCCT_paths[sample]
         HRpQCT_path = folder
-        PCCT_images, HRpQCT_image = self._load_range_from_folder(PCCT_path, HRpQCT_path, index - self.number_of_context_slices, index + self.number_of_context_slices+1)
+        PCCT_images, HRpQCT_images = self._load_range_from_folder(PCCT_path, HRpQCT_path, index - self.output_size[-1], index + self.output_size[-1])
 
         PCCT_images = np.stack(PCCT_images, axis=0)
-        PCCT_images = torch.from_numpy(PCCT_images).float()
+        HRpQCT_images = np.stack(HRpQCT_images, axis=0)
 
-        HRpQCT_image = torch.from_numpy(HRpQCT_image).float()
-        if self.image_transform is not None:
-            # Stack images to apply the same transform to all images
-            images = torch.cat([PCCT_images, HRpQCT_image.unsqueeze(0)], dim=0)
-            images = self.image_transform(images)
-            # Split images again
-            PCCT_images = images[:-1]
-            HRpQCT_image = images[-1]
+        # Apply transform
+        if self.transform is not None:
+            PCCT_images = self.transform(PCCT_images, HRpQCT_images)
 
-        if self.PCCT_transform is not None:
-            PCCT_images = self.PCCT_transform(PCCT_images)
+        # Apply augmentation
+        if self.augmentation is not None:
+            PCCT_images = self.augmentation(PCCT_images)
+            # HRpQCT_images = self.augmentation(HRpQCT_images) 
 
         if self.add_channel_dim:
             PCCT_images = PCCT_images.unsqueeze(0)
             HRpQCT_image = HRpQCT_image.unsqueeze(0)
-
-
 
         PCCT_images = PCCT_images.to(self.device)
         HRpQCT_image = HRpQCT_image.to(self.device)
