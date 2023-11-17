@@ -357,7 +357,7 @@ def threshold_image(image: sitk.Image, fraction: float = 0.7, sparse: bool = Tru
     return image
 
 
-def safe_image_to_np_series(image: sitk.Image | str, folder: str, safe_full_size: bool = False, roi: tuple = None):
+def safe_image_to_np_series(image: sitk.Image | str | np.ndarray, folder: str, safe_full_size: bool = False, roi: tuple = None):
     """
     This function safes a 3D image as a series of compressed 2D numpy arrays. This is necessary for the dataset class to work.
     
@@ -375,12 +375,14 @@ def safe_image_to_np_series(image: sitk.Image | str, folder: str, safe_full_size
 
     if isinstance(image, str):
         image = sitk.ReadImage(image)
-    image = image_to_array(image)
+    elif isinstance(image, sitk.Image):
+        image = image_to_array(image)
+
     print(f"Image loaded with shape {image.shape}")
     # Convert to 16 bit floats
     if not safe_full_size:
         print("Converting image to 16 bit floats.")
-        image = image.astype(np.float16)
+        image = image.astype(np.float32)
     
     if roi is not None:
         image = image[:,roi[0]:roi[1],roi[2]:roi[3]]

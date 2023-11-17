@@ -17,6 +17,7 @@ class FemurImageDataset(Dataset):
         assert "context csv path" in config, "Config must contain a context csv path."
         assert split in ["train", "val", "test"], "Split must be one of [train, val, test]."
         self._config = config
+        self._split = split
 
         if "base path" in config:
             base_path = config["base path"]

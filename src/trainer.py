@@ -86,10 +86,10 @@ class Trainer:
         self.loss_fn = loss_fn
 
         self.train_dataloader = DataLoader(
-            train_data, batch_size=self.batch_size, shuffle=config["shuffle"], num_workers=16, persistent_workers=True
+            train_data, batch_size=self.batch_size, shuffle=config["shuffle"], num_workers=16, persistent_workers=True, pin_memory=True
         )
         self.test_dataloader = DataLoader(
-            test_data, batch_size=self.batch_size, shuffle=config["shuffle"], num_workers=16
+            test_data, batch_size=self.batch_size, shuffle=config["shuffle"], num_workers=16, presistent_workers=True, pin_memory=True
         )
         self.epochs_between_safe = config["epochs_between_safe"]
         self.batches_between_safe = config["batches_between_safe"]

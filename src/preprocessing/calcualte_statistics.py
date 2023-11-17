@@ -8,6 +8,7 @@ def _get_intensity_statistics(image: np.ndarray):
     return {
         "median": np.median(image),
         "mean": np.mean(image),
+        "std": np.std(image),
         "min": np.min(image),
         "max": np.max(image),
         "percentile_99_5": np.percentile(image, 99.5),
