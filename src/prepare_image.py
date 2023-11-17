@@ -19,4 +19,4 @@ if __name__ == "__main__":
         yaml.dump(stats, file)
 
     # Convert the image
-    safe_image_to_np_series(image, args.output + "/np_series" )
+    safe_image_to_np_series(image, args.output + "/np_series", roi=[300, 800, 200, 900] )

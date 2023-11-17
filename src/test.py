@@ -28,7 +28,35 @@ def main():
     dataset = FemurImageDataset(config=CONFIG, split="val")
     
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-8)
-    trainer = Trainer(model, dataset, test_data=None, split_test=0.2, loss_fn=torch.nn.MSELoss(), optimizer=optimizer, device="cuda", epochs=50, batches_between_safe=500, epochs_between_safe=2, name="test", test_metrics=[torch.nn.MSELoss()], test_metric_names=["MSE"], scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, factor=0.5, verbose=True))
+        # split_test: float = None,
+        # device=None,
+        # batch_size=32,
+        # epochs=10,
+        # shuffle=True,
+        # name=None,
+        # test_metrics=None,
+        # test_metric_names=None,
+        # scheduler=None,
+        # epochs_between_safe=1,
+        # batches_between_safe=None,
+        # split_random=False,
+    trainer_config = { 
+        "split_test": 0.2,
+        "device": "cuda",
+        "batch_size": 32,
+        "epochs": 1,
+        "shuffle": True,
+        "name": "test",
+        "test_metrics": [torch.nn.MSELoss()],
+        "test_metric_names": ["MSE"],
+        "epochs_between_safe": 1,
+        "batches_between_safe": 20,
+        "split_random": False,
+        "tensorboard_path": "tensorboard"
+    }
+
+
+    trainer = Trainer(model, dataset, None, torch.nn.MSELoss(), optimizer, trainer_config)
     trainer.train_test()
 
     

@@ -20,18 +20,7 @@ class Trainer:
         generator=torch.Generator().manual_seed(1337),
         
     ):
-        # split_test: float = None,
-        # device=None,
-        # batch_size=32,
-        # epochs=10,
-        # shuffle=True,
-        # name=None,
-        # test_metrics=None,
-        # test_metric_names=None,
-        # scheduler=None,
-        # epochs_between_safe=1,
-        # batches_between_safe=None,
-        # split_random=False,
+
         if model == None or train_data == None:
             raise Exception("Model and train_data must be specified")
 

@@ -2,11 +2,8 @@ numpy
 pandas
 matplotlib
 SimpleITK
-itkwidgets
-itk-elastix
 scikit-learn
 scikit-image
-pydicom
 ipykernel
 #viz
 dicom2nifti

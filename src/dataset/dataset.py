@@ -119,13 +119,12 @@ class FemurImageDataset(Dataset):
         
         # Load the images
         PCCT_images, HRpQCT_images = self._load_range_from_folder(PCCT_path, HRpQCT_path, index, index + self.output_size[0])
-
         PCCT_images = np.stack(PCCT_images, axis=0)
         HRpQCT_images = np.stack(HRpQCT_images, axis=0)
         # Apply augmentation
 
         PCCT_images = np.expand_dims(PCCT_images,0)
-        HRpQCT_images = np.expand_dims(HRpQCT_images, 0)  
+        HRpQCT_images = np.expand_dims(HRpQCT_images, 0)
         if self.augmentation is not None:
             aug = self.augmentation({"image": PCCT_images, "labels": HRpQCT_images})
             PCCT_images = aug["image"]

@@ -383,16 +383,17 @@ def safe_image_to_np_series(image: sitk.Image | str, folder: str, safe_full_size
         image = image.astype(np.float16)
     
     if roi is not None:
-        image = image[roi[0]:roi[1],roi[2]:roi[3]]
-
+        image = image[:,roi[0]:roi[1],roi[2]:roi[3]]
+    
     # Check if folder exists and create it if not
     if not os.path.exists(folder):
         os.makedirs(folder)
 
     # For each slice in the image, save it as a compressed numpy array
     for i in range(image.shape[0]):
-        if i % 100 == 0:
-            print(f"Saving slice {i}")
         np.savez_compressed(os.path.join(folder, f"{i}.npz"), image[i])
+
+        if i % 100 == 0:
+            print(f"Saving slice {i}, size {image[i].shape}, path: {os.path.join(folder, f'{i}.npz')}")
 
     print("Done.")
