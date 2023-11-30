@@ -17,6 +17,7 @@ def main():
     subfolders.sort()
     subfolders = [os.path.join(FOLDER, subfolder) for subfolder in subfolders]
     subfolders = [subfolder for subfolder in subfolders if os.path.isdir(subfolder) and (subfolder.endswith("L") or subfolder.endswith("R"))]
+    subfolders = [r"C:\Users\Yannick\Documents\repos\deep_femur_segmentation\data\HR-pQCT\2209_05992_L"]
     print(subfolders)
     for subfolder in subfolders:
         dirs = os.listdir(subfolder)

@@ -279,10 +279,10 @@ def intensity_normalization(image: sitk.Image | np.ndarray, lower_bound: int = 0
     return image
 
 
-def reorient_PCCT_image(image : sitk.Image):
+def reorient_PCCT_image(image : sitk.Image, k):
     array = image_to_array(image)
     array = array[:,::-1,::-1]
-    array = np.rot90(array, k=-1)
+    array = np.rot90(array, k=k)
     image = array_to_image(array, image.GetSpacing(), image.GetOrigin(), image.GetDirection())
     return image
 
@@ -357,7 +357,7 @@ def threshold_image(image: sitk.Image, fraction: float = 0.7, sparse: bool = Tru
     return image
 
 
-def safe_image_to_np_series(image: sitk.Image | str | np.ndarray, folder: str, safe_full_size: bool = False, roi: tuple = None):
+def safe_image_to_np_series(image: sitk.Image | str | np.ndarray, folder: str, safe_full_size: bool = False, roi: tuple = None, start_index: int = 0):
     """
     This function safes a 3D image as a series of compressed 2D numpy arrays. This is necessary for the dataset class to work.
     
@@ -393,9 +393,9 @@ def safe_image_to_np_series(image: sitk.Image | str | np.ndarray, folder: str, s
 
     # For each slice in the image, save it as a compressed numpy array
     for i in range(image.shape[0]):
-        np.savez_compressed(os.path.join(folder, f"{i}.npz"), image[i])
+        np.savez_compressed(os.path.join(folder, f"{i + start_index}.npz"), image[i])
 
         if i % 100 == 0:
-            print(f"Saving slice {i}, size {image[i].shape}, path: {os.path.join(folder, f'{i}.npz')}")
+            print(f"Saving slice {i + start_index}, size {image[i].shape}, path: {os.path.join(folder, f'{i}.npz')}")
 
     print("Done.")
