@@ -2,11 +2,15 @@ import torch
 import SimpleITK as sitk
 import numpy as np
 import os
+import zipfile
 import pandas as pd
 from torch.utils.data import Dataset
 from torchvision.transforms import v2
+import time
+
 from skimage.util import random_noise
 from .transforms import get_image_augmentation
+from .utils import get_inital_crop_size
 
 class FemurImageDataset(Dataset):
     """Femur Image Dataset"""
@@ -14,57 +18,70 @@ class FemurImageDataset(Dataset):
     def __init__(self, config, split) -> None:
         super().__init__()
         assert type(config) == dict, "Config must be a dictionary."
-        assert "context csv path" in config, "Config must contain a context csv path."
+        assert "context_csv_path" in config, "Config must contain a context csv path."
         assert split in ["train", "val", "test"], "Split must be one of [train, val, test]."
+
         self._config = config
         self._split = split
+        self._use_accelerator = config["use_accelerator"]
+        self._input_size = [get_inital_crop_size(config["input_size"]) for i in range(3)]
+        self._output_size = [get_inital_crop_size(config["output_size"]) for i in range(3)]
 
-        if "base path" in config:
-            base_path = config["base path"]
+        # 
+        self._scale_factor = [a/b for a,b in zip(self._output_size, self._input_size)]
 
-        if "output size" in config:
-            self.output_size = config["output size"]
-        else:
-            self.output_size = [64, 64, 64] # Default output size in form [z, x, y]
+        self._base_path = config["base_path"]
         
-        if "use accelerator" in config:
-            self.use_accelerator = config["use accelerator"]
+        if self._use_accelerator:
+            self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            if self._device == torch.device("cpu"):
+                self._device = torch.device("mps" if torch.backends.mps.available() else "cpu")
         else:
-            self.use_accelerator = True
+            self._device = torch.device("cpu")
 
-        if self.use_accelerator:
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            if self.device == torch.device("cpu"):
-                self.device = torch.device("mps" if torch.backends.mps.available() else "cpu")
-        else:
-            self.device = torch.device("cpu")
-
-        if "augmentation" in config and config["augmentation"] is not None:
+        if config["augmentation"]:
             self.augmentation = get_image_augmentation(config, split)
         else:
             self.augmentation = get_image_augmentation(config, "test")
         
-        if "add channel dim" in config:
-            self.add_channel_dim = config["add channel dim"]
-        
-        self.sample_paths = pd.read_csv(config["context csv path"])
+        self.sample_paths = pd.read_csv(config["context_csv_path"])
         self.PCCT_paths = self.sample_paths["PCCT_path"]
         self.HRpQCT_paths = self.sample_paths["HRpQCT_path"]
-        if base_path is not None:
-            self.PCCT_paths = base_path + self.PCCT_paths
-            self.HRpQCT_paths = base_path + self.HRpQCT_paths
+        if self._base_path is not None:
+            self.PCCT_paths = self._base_path + self.PCCT_paths
+            self.HRpQCT_paths = self._base_path + self.HRpQCT_paths
 
         self.length = 0
         self.slice_from_range = {}
-        for i, (HRpQCT_folder, PCCT_folder) in enumerate(zip(self.HRpQCT_paths, self.PCCT_paths)):
+        for i in range(len(self.PCCT_paths)):
+            PCCT_folder = self.PCCT_paths[i]
+            HRpQCT_folder = self.HRpQCT_paths[i]
             if not os.path.exists(HRpQCT_folder):
                 raise ValueError(f"Folder {HRpQCT_folder} does not exist.")
-            files_in_folder = len([file for file in os.listdir(HRpQCT_folder) if file.endswith(".npz")])
-            pcct_files = len([file for file in os.listdir(PCCT_folder) if file.endswith(".npz")])
             
-            assert files_in_folder == pcct_files, f"Number of files in {HRpQCT_folder} and {PCCT_folder} do not match."
+            # Get Sample name
+            name = os.path.basename(HRpQCT_folder)
+            
+            # get zip files
+            HRpQCT_zip = os.path.join(HRpQCT_folder, f"{name}.zip")
+            PCCT_zip = os.path.join(PCCT_folder, f"{name}.zip")
 
-            self.slice_from_range[HRpQCT_folder] = (self.length, self.length + files_in_folder, i)
+            # Check if zip files exist
+            if not os.path.exists(HRpQCT_zip):
+                raise ValueError(f"Zip file {HRpQCT_zip} does not exist.")
+            if not os.path.exists(PCCT_zip):
+                raise ValueError(f"Zip file {PCCT_zip} does not exist.")
+            
+            # Get number of files in zip files
+            with zipfile.ZipFile(HRpQCT_zip, "r") as f:
+                files_in_folder = len(f.infolist())
+            with zipfile.ZipFile(PCCT_zip, "r") as f:
+                pcct_files = len(f.infolist())
+            print(f"Found {files_in_folder} files in {HRpQCT_folder} and {pcct_files} files in {PCCT_folder}")
+            self.PCCT_paths[i] = os.path.join(PCCT_folder, f"{name}.zip")
+            self.HRpQCT_paths[i] = os.path.join(HRpQCT_folder, f"{name}.zip")
+
+            self.slice_from_range[self.PCCT_paths[i]] = (self.length, self.length + pcct_files, i)
             self.length += files_in_folder
 
 
@@ -74,25 +91,32 @@ class FemurImageDataset(Dataset):
         return self.length
     
     def _load_range_from_folder(self, PCCT_folder, HRpQCT_folder, start, end):
-
+        
         PCCT_images = []
-        PCCT_folder = [os.path.join(PCCT_folder, file) for file in os.listdir(PCCT_folder)]
         HRpQCT_images = []
-        HRpQCT_folder = [os.path.join(HRpQCT_folder, file) for file in os.listdir(HRpQCT_folder)]
+        num_slices_in_folder = self.slice_from_range[PCCT_folder][1] - self.slice_from_range[PCCT_folder][0]
         
         assert start >= 0, "Start index must be greater than 0."
-        
         # Calculate padding needed to get to the expected size
         to_extend_back = 0
-        if end > len(PCCT_folder):
-            to_extend_back = end - len(PCCT_folder)
-            end = len(PCCT_folder)
+        if end > num_slices_in_folder:
+            to_extend_back = end - num_slices_in_folder
+            end = num_slices_in_folder
+
+        
 
         # TODO: Multithreading? Time this.
-        for i in range(start, end):
-            PCCT_images.append(np.load(PCCT_folder[i])["arr_0"])
-            HRpQCT_images.append(np.load(HRpQCT_folder[i])["arr_0"])
+        with zipfile.ZipFile(PCCT_folder, "r") as f:
+            for i in range(start, end):
+                with f.open(f"{i}.npy") as file:
+                    PCCT_images.append(np.load(file))
 
+
+        # Load double the range from the HRpQCT folder
+        with zipfile.ZipFile(HRpQCT_folder, "r") as f:
+            for i in range(int(start*self._scale_factor[0]), int(end*self._scale_factor[0])+1):
+                with f.open(f"{i}.npy") as file:
+                    HRpQCT_images.append(np.load(file))
         # PCCT_images = [np.zeros_like(PCCT_images[0]) for _ in range(to_extend_start)] + PCCT_images
         PCCT_images = PCCT_images + [np.zeros_like(PCCT_images[0]) for _ in range(to_extend_back)]
         HRpQCT_images =  HRpQCT_images + [np.zeros_like(HRpQCT_images[0]) for _ in range(to_extend_back)]
@@ -115,11 +139,10 @@ class FemurImageDataset(Dataset):
         # Set index to be relative to the folder (i.e. refer to the first slice to be loaded from the folder)
         index = index - self.slice_from_range[folder][0]
         # Get the folder paths for the PCCT and HRpQCT images
-        PCCT_path = self.PCCT_paths[sample]
-        HRpQCT_path = folder
-        
+        PCCT_path = folder
+        HRpQCT_path = self.HRpQCT_paths[sample]
         # Load the images
-        PCCT_images, HRpQCT_images = self._load_range_from_folder(PCCT_path, HRpQCT_path, index, index + self.output_size[0])
+        PCCT_images, HRpQCT_images = self._load_range_from_folder(PCCT_path, HRpQCT_path, index, index + self._input_size[0])
         PCCT_images = np.stack(PCCT_images, axis=0)
         HRpQCT_images = np.stack(HRpQCT_images, axis=0)
         # Apply augmentation
@@ -137,8 +160,8 @@ class FemurImageDataset(Dataset):
         if not torch.is_tensor(HRpQCT_images):
             HRpQCT_images = torch.from_numpy(HRpQCT_images)
 
-        PCCT_images = PCCT_images.to(self.device, dtype=torch.float32)
-        HRpQCT_images = HRpQCT_images.to(self.device, dtype=torch.float32)
+        PCCT_images = PCCT_images.to(self._device, dtype=torch.float32)
+        HRpQCT_images = HRpQCT_images.to(self._device, dtype=torch.float32)
         return PCCT_images, HRpQCT_images
 
 
