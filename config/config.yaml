@@ -1,23 +1,24 @@
-context_csv_path: "data/test.csv"
+context_csv_path: "data/train.csv"
 input_size: [64,64,64]
 output_size: [128,128,128]
 use_accelerator: True
 augmentation: True
 base_path: "./"
+seed: 2001
 augmentation_params:
-  rotation_range: [90,90,90]
-  p_rotation: 0.5
+  rotation_range: [45,45,45]
+  p_rotation: 0.8
   min_zoom: 0.9
-  max_zoom: 1.3
+  max_zoom: 1.1
   p_zoom: 0.5
   p_flip: 0.5
   noise_std: 0.1
-  p_noise: 0.1
+  p_noise: 0.5
   smooth_sigma: [0.25, 0.1]
-  p_smooth: 0.1
-  p_intensity_scale: 0.3
+  p_smooth: 0.5
+  p_intensity_scale: 0.5
   intensity_scale_factors: 0.2
-  p_intensity_shift: 0.3
+  p_intensity_shift: 0.5
   intensity_shift_offsets: 0.1
   p_contrast: 0.3
   contrast_gamma: 4
@@ -25,10 +26,23 @@ model:
   name: "BasicUNet"
   spatial_dims: 3
   features: [32, 32, 64, 128, 256, 32]
-  activation: "LeakyReLU"
+  strides: [2, 2, 2, 2, 2]
+  activation: "ReLU"
   dropout: 0.3
   bias: True
-  normalization: "instance"
+  norm: "Instance"
+trainer:
+  device: "cuda"
+  batch_size: 16
+  num_workers: 8
+  epochs: 10
+  shuffle: True
+  name: "BasicUNet"
+  test_metrics: ["MSE"]
+  epochs_between_safe: 1
+  batches_between_safe: 200
+  split_random: False
+  tensorboard_path: "tensorboard"
 
 
 
