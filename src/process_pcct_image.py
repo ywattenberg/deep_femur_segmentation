@@ -22,29 +22,29 @@ def main(path, roi):
     pcct_file = os.path.join(path, pcct_file)
     print(f"Found pcct file: {pcct_file}")
 
-    # # Read pcct file
-    # image = sitk.ReadImage(pcct_file)
-    # print(f"Image shape: {image.GetSize()}")
-    # image = sitk.GetArrayFromImage(image)
+    # Read pcct file
+    image = sitk.ReadImage(pcct_file)
+    print(f"Image shape: {image.GetSize()}")
+    image = sitk.GetArrayFromImage(image)
 
-    # min_value = np.min(image)
-    # image = None
-    # # Transform file
-    # os.path.join(path, "TransformParameters.0.txt")
-    # with open(os.path.join(path, "TransformParameters.0.txt"), "r") as f:
-    #     # Find the line with the DefaultPixelValue value (DefaultPixelValue 0)
-    #     lines = f.readlines()
-    #     for i, line in enumerate(lines):
-    #         if "DefaultPixelValue 0" in line :
-    #             lines[i] = f"(DefaultPixelValue {min_value})\n"
-    #             print(f"Found line: {lines[i]} replacing with: {min_value}")
-    #             break
+    min_value = np.min(image)
+    image = None
+    # Transform file
+    os.path.join(path, "TransformParameters.0.txt")
+    with open(os.path.join(path, "TransformParameters.0.txt"), "r") as f:
+        # Find the line with the DefaultPixelValue value (DefaultPixelValue 0)
+        lines = f.readlines()
+        for i, line in enumerate(lines):
+            if "DefaultPixelValue 0" in line :
+                lines[i] = f"(DefaultPixelValue {min_value})\n"
+                print(f"Found line: {lines[i]} replacing with: {min_value}")
+                break
 
-    # with open(os.path.join(path, "TransformParameters.1.txt"), "w") as f:
-    #     f.writelines(lines)
+    with open(os.path.join(path, "TransformParameters.1.txt"), "w") as f:
+        f.writelines(lines)
 
-    # # Transform image
-    # subprocess.run(["./elastix/transformix", "-in", pcct_file, "-out", path, "-tp", os.path.join(path, "TransformParameters.1.txt")])
+    # Transform image
+    subprocess.run(["./elastix/transformix", "-in", pcct_file, "-out", path, "-tp", os.path.join(path, "TransformParameters.1.txt")])
 
     # Read transformed image
     image = sitk.ReadImage(os.path.join(path, "result.mha"))
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     folders = os.listdir(image_folder_path)
     
     dict = {"1":[395, 835, 320, 1000], "3": [360,800,250,1010], "5":[315,850,375,955], "7":[330,775,285,970], "12":[360,825,230,1000],"8":[330, 855, 265,1080]}
-    #dict = {"1":[395, 835, 320, 1000]}
+
     
     for key, roi in dict.items():
         sample = [folder for folder in folders if folder.startswith(f"{key}_")]

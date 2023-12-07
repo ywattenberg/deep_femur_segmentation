@@ -23,17 +23,14 @@ from monai.transforms import (
     RandFlipd,
     ToTensord,
     SpatialCropd,
+    HistogramNormalized
 )
-
-
-
-
-
 
 
 def main():
 
-    config = yaml.load(open("./src/dataset/transform_parameters.yaml", "r"), Loader=yaml.FullLoader)
+    config = yaml.load(open("config/config.yaml", "r"), Loader=yaml.FullLoader)
+    config["input_size"] = [100, 500, 500]
     config["output size"] = [100, 500, 500]
 
     rotation_range = [i / 180 * np.pi for i in config['augmentation_params']['rotation_range']]
@@ -43,7 +40,7 @@ def main():
     inital_crop_size = int(np.ceil(np.sqrt((inner_lenght ** 2 + config["output size"][2] ** 2))))+1
 
     target_folder = r"test_out"
-    image = sitk.ReadImage(r"data/transformix_2208/result.mha")
+    image = sitk.ReadImage(r"data\PCCT\8_2210_06492_L\result.mha")
     image = sitk.GetArrayFromImage(image[:,:, 0:1000])
 
     img_min = np.min(image)
@@ -67,7 +64,8 @@ def main():
 
     transforms = [
     RandSpatialCropd(keys=['image'], roi_size=[inital_crop_size, inital_crop_size, inital_crop_size], random_size=False),
-    ScaleIntensityRanged(keys=['image'], a_min=config['statistics']['intensities']['percentile_00_5'], a_max=config['statistics']['intensities']['percentile_99_5'], b_min=0.0, b_max=1.0, clip=True),
+    ScaleIntensityRanged(keys=['image'], a_min=perc_00_5, a_max=perc_99_5, b_min=-1, b_max=1.0, clip=True),
+    HistogramNormalized(keys=['image'], num_bins=256, min=-1, max=1),
     RandRotated(keys=['image'], range_x=rotation_range, range_y=rotation_range, range_z=rotation_range, prob=config["augmentation_params"]["p_rotation"]),
     RandZoomd(keys=['image' ], min_zoom=config["augmentation_params"]["min_zoom"], max_zoom=config["augmentation_params"]["max_zoom"], prob=config["augmentation_params"]["p_zoom"]),
     RandFlipd(keys=['image' ], prob=config["augmentation_params"]["p_flip"], spatial_axis=0),

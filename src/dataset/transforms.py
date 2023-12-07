@@ -24,33 +24,33 @@ from monai.transforms import (
     Crop,
     Randomizable,
     CenterSpatialCropd,
+    HistogramNormalized
 )
-
+import logging
 from .utils import get_inital_crop_size
 
-class CustomCropRandomd(Crop, Randomizable):
+class CustomCropRandomd(Randomizable, Crop):
     def __init__(self, keys, roi_size_image, roi_size_label):
         super().__init__()
         self.roi_size_image = roi_size_image
         self.roi_size_label = roi_size_label
-        self.scale_factor = [a/b for a,b in zip(self.roi_size_image, self.roi_size_label)]
+        self.scale_factor = [b/a for a,b in zip(self.roi_size_image, self.roi_size_label)]
         self.keys = keys
     
     def __call__(self, data, lazy=False):
         img_shape = data[self.keys[0]].shape[-3:]
-
         # Get Random Center Point for Crop
         half_roi_size = [int(i/2) for i in self.roi_size_image]
         center = [0,0,0]
-        center[0] = np.random.randint(0+ half_roi_size[0], img_shape[0] - half_roi_size[0])
-        center[1] = np.random.randint(0+ half_roi_size[1], img_shape[1] - half_roi_size[1])
-        center[2] = np.random.randint(0+ half_roi_size[2], img_shape[2] - half_roi_size[2])
+        if  half_roi_size[0] >= img_shape[0] - half_roi_size[0]:
+             center[0] = half_roi_size[0]
+        else:
+            center[0] = np.random.randint(half_roi_size[0], img_shape[0] - half_roi_size[0])
+        center[1] = np.random.randint(half_roi_size[1], img_shape[1] - half_roi_size[1])
+        center[2] = np.random.randint(half_roi_size[2], img_shape[2] - half_roi_size[2])
 
         labels_center = [int(i*s) for i,s in zip(center, self.scale_factor)]
-        print(f"Center: {center}, Labels Center: {labels_center}")
-        print(f"Image Shape: {img_shape}, ROI Size: {self.roi_size_image}")
-        print(f"Labels Shape: {data[self.keys[1]].shape}, ROI Size: {self.roi_size_label}")
-        
+
         for key in self.keys:
             if "label" in key:
                 data[key] = super().__call__(img=data[key], 
@@ -69,11 +69,12 @@ def get_image_augmentation(config, split):
     # Calculate the initial crops size such that after rotation we don't lose any information
     inital_crop_size_in = get_inital_crop_size(config["input_size"])
     inital_crop_size_out = get_inital_crop_size(config["output_size"])
-
+    print(f"Initial crop size: {inital_crop_size_in} -> {inital_crop_size_out}")
     if split == "train":
         transforms = Compose([
-            CustomCropRandomd(keys=['image', 'labels'], roi_size_in=[inital_crop_size_in for i in range(3)], roi_size_out= [inital_crop_size_in for i in range(3)]),
-            # ScaleIntensityRanged(keys=['image', 'labels'], a_min=config['statistics']['intensities']['percentile_00_5'], a_max=config['statistics']['intensities']['percentile_99_5'], b_min=0.0, b_max=1.0, clip=True),
+            CustomCropRandomd(keys=['image', 'labels'], roi_size_image=[inital_crop_size_in for i in range(3)], roi_size_label=[inital_crop_size_out for i in range(3)]),
+            ScaleIntensityRanged(keys=['image'],a_min=0, a_max=3, b_min=-1.0, b_max=1.0, clip=True),
+            ScaleIntensityRanged(keys=['labels'],a_min=-1.5, a_max=1.5, b_min=-1.0, b_max=1.0, clip=True),
             RandRotated(keys=['image', 'labels'], range_x=rotation_range, range_y=rotation_range, range_z=rotation_range, prob=config["augmentation_params"]["p_rotation"]),
             RandZoomd(keys=['image', 'labels'], min_zoom=config["augmentation_params"]["min_zoom"], max_zoom=config["augmentation_params"]["max_zoom"], prob=config["augmentation_params"]["p_zoom"]),
             CenterSpatialCropd(keys=['image'], roi_size=config["input_size"]),
@@ -90,13 +91,21 @@ def get_image_augmentation(config, split):
         ])
     elif split == "val":
         transforms = Compose([
-            # ScaleIntensityRanged(keys=['image', 'labels'],a_min=-500, a_max=1000, b_min=0.0, b_max=1.0, clip=True),
             # RandSpatialCropd(keys=['image', 'labels'], roi_size=config["output_size"], random_size=False),
+            CustomCropRandomd(keys=['image', 'labels'], roi_size_image=config["input_size"], roi_size_label=config["output_size"]),
+            ScaleIntensityRanged(keys=['image'],a_min=0, a_max=3, b_min=-1.0, b_max=1.0, clip=True),
+            ScaleIntensityRanged(keys=['labels'],a_min=-1.5, a_max=1.5, b_min=-1.0, b_max=1.0, clip=True),
             ToTensord(keys=['image', 'labels'])
             ])
         print("VAL")
     elif split == "test":
-        pass
+                transforms = Compose([
+                    ScaleIntensityRanged(keys=['image'],a_min=0, a_max=3, b_min=-1.0, b_max=1.0, clip=True),
+                    ScaleIntensityRanged(keys=['labels'],a_min=-1.5, a_max=1.5, b_min=-1.0, b_max=1.0, clip=True),
+                    # RandSpatialCropd(keys=['image', 'labels'], roi_size=config["output_size"], random_size=False),
+                    # CustomCropRandomd(keys=['image', 'labels'], roi_size_image=config["input_size"], roi_size_label=config["output_size"]),
+                    ToTensord(keys=['image', 'labels'])
+                ])
 
     return transforms
 

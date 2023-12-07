@@ -24,7 +24,7 @@ class FemurImageDataset(Dataset):
         self._config = config
         self._split = split
         self._use_accelerator = config["use_accelerator"]
-        if self._split == "train" or self._split == "val":
+        if self._split == "train":
             self._input_size = [get_inital_crop_size(config["input_size"]) for _ in range(3)]
             self._output_size = [get_inital_crop_size(config["output_size"]) for _ in range(3)]
         else:
@@ -66,15 +66,12 @@ class FemurImageDataset(Dataset):
             # Get Sample name
             name = os.path.basename(HRpQCT_folder)
             
-            # get zip files
+            # get folder with npy files
             HRpQCT_f = os.path.join(HRpQCT_folder, f"{name}")
             PCCT_f = os.path.join(PCCT_folder, f"{name}")
 
             files_in_folder = len(os.listdir(HRpQCT_f))
             pcct_files = len(os.listdir(PCCT_f))
-            
-            # Get number of files in zip files
-
     
             self.PCCT_paths[i] = os.path.join(PCCT_folder, f"{name}")
             self.HRpQCT_paths[i] = os.path.join(HRpQCT_folder, f"{name}")
