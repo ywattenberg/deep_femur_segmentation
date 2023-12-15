@@ -91,7 +91,7 @@ class Trainer:
             if len(runs) == 0:
                 run_num = 0
             else:
-                run_num = runs[-1] 
+                run_num = runs[-1]  + 1
             log_dir = os.path.join(config["tensorboard_path"], f"run_{run_num}")
             self.writer = SummaryWriter(log_dir=log_dir)
             print(f"Writing to {log_dir}")

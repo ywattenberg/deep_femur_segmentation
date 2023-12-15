@@ -25,11 +25,11 @@ def main():
     val_dataset = FemurImageDataset(config=val_conf, split="val")
     model = UpsampleUNet(1,1, CONFIG)
     # Load model
-    model.load_state_dict(torch.load("models/BasicUNet_epoch_5.pth"))
+    # model.load_state_dict(torch.load("models/BasicUNet_epoch_5.pth"))
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-8)
 
     trainer = Trainer(model, dataset, val_dataset, torch.nn.MSELoss(), optimizer, CONFIG)
-    trainer.train_test(5)
+    trainer.train_test()
     
         
    
