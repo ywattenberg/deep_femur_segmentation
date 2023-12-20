@@ -28,7 +28,7 @@ def main():
     # model.load_state_dict(torch.load("models/BasicUNet_epoch_5.pth"))
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-8)
 
-    trainer = Trainer(model, dataset, val_dataset, torch.nn.MSELoss(), optimizer, CONFIG)
+    trainer = Trainer(model, dataset, val_dataset, torch.nn.L1Loss(), optimizer, CONFIG)
     trainer.train_test()
     
         

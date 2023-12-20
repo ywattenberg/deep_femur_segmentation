@@ -78,6 +78,8 @@ class Trainer:
             for metric in config["test_metrics"]:
                 if metric.upper() == "MSELoss" or metric.upper() == "MSE":
                     self.test_metrics.append(torch.nn.MSELoss())
+                elif metric.upper() == "L1Loss" or metric.upper() == "L1":
+                    self.test_metrics.append(torch.nn.L1Loss())
 
         if "scheduler" not in config:
             self.scheduler = None
@@ -86,13 +88,7 @@ class Trainer:
 
         if "tensorboard_path" in config:
             runs = os.listdir(config["tensorboard_path"])
-            runs = [int(run.split("_")[-1]) for run in runs if "run_" in run]
-            runs = sorted(runs)
-            if len(runs) == 0:
-                run_num = 0
-            else:
-                run_num = runs[-1]  + 1
-            log_dir = os.path.join(config["tensorboard_path"], f"run_{run_num}")
+            log_dir = os.path.join(config["tensorboard_path"], self.name)
             self.writer = SummaryWriter(log_dir=log_dir)
             print(f"Writing to {log_dir}")
             self.writer.add_text("Config", str(whole_config))
