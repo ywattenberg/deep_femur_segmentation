@@ -3,6 +3,9 @@ import time
 import os
 from datetime import datetime
 from torch.utils.data import DataLoader, random_split, Subset
+from monai.losses import DiceLoss
+import monai.metrics as monai_metrics
+
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -16,6 +19,11 @@ def collate_fn(batch):
       torch.stack([x[0] for x in batch]),
       torch.stack([x[1] for x in batch])
     ]
+
+def accuracy_score(y_true, y_pred):
+    # Calculate fn and fp using monai
+    fn_fp = monai_metrics.get_confusion_matrix(y_pred, y_true, include_background=False)
+    return monai_metrics.compute_confusion_matrix_metric("accuracy", fn_fp)
 
 class Trainer:
     def __init__(
@@ -80,6 +88,13 @@ class Trainer:
                     self.test_metrics.append(torch.nn.MSELoss())
                 elif metric.upper() == "L1Loss" or metric.upper() == "L1":
                     self.test_metrics.append(torch.nn.L1Loss())
+                elif metric.upper() == "DICE" or metric.upper() == "DICELOSS":
+                    self.test_metrics.append(monai_metrics.compute_generalized_dice)
+                elif metric.upper() == "ACCURACY":
+                    self.test_metrics.append(accuracy_score)
+                elif metric.upper() == "IOU":
+                    self.test_metrics.append(monai_metrics.compute_iou)
+
 
         if "scheduler" not in config:
             self.scheduler = None

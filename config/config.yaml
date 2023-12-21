@@ -1,6 +1,5 @@
 context_csv_path: "data/train.csv"
 input_size: [64,64,64]
-output_size: [128,128,128]
 use_accelerator: True
 augmentation: True
 base_path: "./"
@@ -23,22 +22,22 @@ augmentation_params:
   p_contrast: 0.3
   contrast_gamma: 4
 model:
-  name: "BasicUNet"
   spatial_dims: 3
-  features: [32, 32, 64, 128, 256, 32]
-  strides: [2, 2, 2, 2, 2]
+  features: [64,64,128,128,256,256]
+  strides: [2, 2, 2, 2, 2, 2]
+  dropout: 0.3
   activation: "ReLU"
   dropout: 0.3
   bias: True
   norm: "Instance"
 trainer:
   device: "cuda"
-  batch_size: 16
+  batch_size: 32
   num_workers: 8
   epochs: 10
   shuffle: True
-  name: "BasicUNet"
-  test_metrics: ["MSE"]
+  name: "BasicUNet_No_padding_L1_loss"
+  test_metrics: ["L1", "MSE"]
   epochs_between_safe: 1
   batches_between_safe: 200
   split_random: False
