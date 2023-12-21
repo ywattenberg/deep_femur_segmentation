@@ -66,7 +66,7 @@ class UpsampleUNet(nn.Module):
             out_channels=out_channels,
             channels=self._config["features"],
             strides=self._config["strides"],
-            dropout=0.3,
+            dropout=self._config["dropout"],
             norm=self._config["norm"],
             act=self._config["activation"],
         )
