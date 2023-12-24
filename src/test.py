@@ -13,7 +13,7 @@ from model.basic_UNet import BasicUNet, UpsampleUNet
 
 
 def main():
-    torch.set_default_dtype(torch.float32)
+    torch.set_default_dtype(torch.float16)
     # Get Unet model from Monai
     CONFIG = yaml.safe_load(open("config/config.yaml", "r"))
     if "seed" in CONFIG:
