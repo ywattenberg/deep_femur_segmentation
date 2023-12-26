@@ -39,9 +39,12 @@ class FemurImageDataset(Dataset):
         if self._use_accelerator:
             self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             if self._device == torch.device("cpu"):
-                self._device = torch.device("mps" if torch.backends.mps.available() else "cpu")
+                self._device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
         else:
             self._device = torch.device("cpu")
+
+        dtypes = {"float32": np.float32, "float16": np.float16, "float64": np.float64, "float": np.float32}
+        self._dtype = dtypes[config["dtype"]]
 
         if config["augmentation"]:
             self.augmentation = get_image_augmentation(config, split)
@@ -111,9 +114,9 @@ class FemurImageDataset(Dataset):
         #             HRpQCT_images.append(np.load(file))
 
         for i in range(start, end):
-            PCCT_images.append(np.load(os.path.join(PCCT_folder, f"{i}.npy")))
+            PCCT_images.append(np.load(os.path.join(PCCT_folder, f"{i}.npy").astype(self._dtype)))
         for i in range(int(start*self._scale_factor[0]), int(end*self._scale_factor[0])):
-            HRpQCT_images.append(np.load(os.path.join(HRpQCT_folder, f"{i}.npy")))
+            HRpQCT_images.append(np.load(os.path.join(HRpQCT_folder, f"{i}.npy").astype(self._dtype)))
         # print(f"Slices {start} to {end} loaded from {PCCT_folder} and {int(start*self._scale_factor[0])} to {int(end*self._scale_factor[0])} from  {HRpQCT_folder}")
         
         missing_pcct = self._input_size[0] - len(PCCT_images)
@@ -168,8 +171,8 @@ class FemurImageDataset(Dataset):
         if not torch.is_tensor(HRpQCT_images):
             HRpQCT_images = torch.from_numpy(HRpQCT_images)
 
-        PCCT_images = PCCT_images.to(dtype=torch.float32)
-        HRpQCT_images = HRpQCT_images.to(dtype=torch.float32)
+        # PCCT_images = PCCT_images.to(dtype=torch.float32)
+        # HRpQCT_images = HRpQCT_images.to(dtype=torch.float32)
         # print(f"Time to get item: {time.time() - time_at_start}ms")
         return PCCT_images, HRpQCT_images
 
