@@ -1,9 +1,11 @@
 context_csv_path: "data/train.csv"
 input_size: [64,64,64]
+output_size: [128,128,128]
 use_accelerator: True
-augmentation: True
+augmentation: False
 base_path: "./"
 seed: 2001
+dtype: "float32"
 augmentation_params:
   rotation_range: [45,45,45]
   p_rotation: 0.8
@@ -23,7 +25,7 @@ augmentation_params:
   contrast_gamma: 4
 model:
   spatial_dims: 3
-  features: [64,64,128,128,256,256]
+  features:  [64, 64, 128, 128, 256, 256] # [16,32,64,128,256,256]
   strides: [2, 2, 2, 2, 2, 2]
   dropout: 0.3
   activation: "ReLU"
@@ -32,11 +34,11 @@ model:
   norm: "Instance"
 trainer:
   device: "cuda"
-  batch_size: 32
+  batch_size: 16
   num_workers: 8
   epochs: 10
   shuffle: True
-  name: "BasicUNet_No_padding_L1_loss"
+  name: "BasicUNet_L1_no_augmentation"
   test_metrics: ["L1", "MSE"]
   epochs_between_safe: 1
   batches_between_safe: 200

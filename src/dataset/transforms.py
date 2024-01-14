@@ -27,7 +27,7 @@ from monai.transforms import (
     HistogramNormalized
 )
 import logging
-from .utils import get_inital_crop_size
+from src.dataset.utils import get_inital_crop_size
 
 class CustomCropRandomd(Randomizable, Crop):
     def __init__(self, keys, roi_size_image, roi_size_label):
@@ -136,7 +136,7 @@ def get_image_segmentation_augmentation(config, split):
 
     if split == "train":
          transforms = Compose([
-            RandSpatialCropd(keys=['image', 'mask', 'cortical', 'trabecular'], roi_size=config["input_size"], random_size=False, allow_missing_keys=True),
+            # RandSpatialCropd(keys=['image', 'mask', 'cortical', 'trabecular'], roi_size=config["input_size"], random_size=False, allow_missing_keys=True),
             ScaleIntensityRanged(keys=['image'],a_min=0, a_max=5, b_min=-1.0, b_max=1.0, clip=True),
             RandRotated(keys=['image', 'labels'], range_x=rotation_range, range_y=rotation_range, range_z=rotation_range, prob=config["augmentation_params"]["p_rotation"]),
             RandZoomd(keys=['image',  'mask', 'cortical', 'trabecular'], allow_missing_keys=True, min_zoom=config["augmentation_params"]["min_zoom"], max_zoom=config["augmentation_params"]["max_zoom"], prob=config["augmentation_params"]["p_zoom"]),
@@ -145,11 +145,11 @@ def get_image_segmentation_augmentation(config, split):
             RandFlipd(keys=['image', 'mask', 'cortical', 'trabecular'], allow_missing_keys=True, prob=config["augmentation_params"]["p_flip"], spatial_axis=0),
             RandFlipd(keys=['image', 'mask', 'cortical', 'trabecular'], allow_missing_keys=True, prob=config["augmentation_params"]["p_flip"], spatial_axis=1),
             RandFlipd(keys=['image', 'mask', 'cortical', 'trabecular'], allow_missing_keys=True, prob=config["augmentation_params"]["p_flip"], spatial_axis=2),
-            RandGaussianNoised(keys=['image'], prob=config["augmentation_params"]["p_noise"], std=config["augmentation_params"]["noise_std"]),
-            RandGaussianSmoothd(keys=['image'], prob=config["augmentation_params"]["p_smooth"], sigma_x=config["augmentation_params"]["smooth_sigma"], sigma_y=config["augmentation_params"]["smooth_sigma"], sigma_z=config["augmentation_params"]["smooth_sigma"]),
-            RandScaleIntensityd(keys=['image'], prob=config["augmentation_params"]["p_intensity_scale"] ,factors=config["augmentation_params"]["intensity_scale_factors"]),
-            RandShiftIntensityd(keys=['image'], prob=config["augmentation_params"]["p_intensity_shift"], offsets=config["augmentation_params"]["intensity_shift_offsets"]),
-            RandAdjustContrastd(keys=['image'], prob=config["augmentation_params"]["p_contrast"], gamma=config["augmentation_params"]["contrast_gamma"]),
+            # RandGaussianNoised(keys=['image'], prob=config["augmentation_params"]["p_noise"], std=config["augmentation_params"]["noise_std"]),
+            # RandGaussianSmoothd(keys=['image'], prob=config["augmentation_params"]["p_smooth"], sigma_x=config["augmentation_params"]["smooth_sigma"], sigma_y=config["augmentation_params"]["smooth_sigma"], sigma_z=config["augmentation_params"]["smooth_sigma"]),
+            # RandScaleIntensityd(keys=['image'], prob=config["augmentation_params"]["p_intensity_scale"] ,factors=config["augmentation_params"]["intensity_scale_factors"]),
+            # RandShiftIntensityd(keys=['image'], prob=config["augmentation_params"]["p_intensity_shift"], offsets=config["augmentation_params"]["intensity_shift_offsets"]),
+            # RandAdjustContrastd(keys=['image'], prob=config["augmentation_params"]["p_contrast"], gamma=config["augmentation_params"]["contrast_gamma"]),
             ToTensord(keys=['image', 'mask', 'cortical', 'trabecular'], allow_missing_keys=True)
         ])
     elif split == "test":
@@ -161,11 +161,13 @@ def get_image_segmentation_augmentation(config, split):
         ])
     elif split == "val":
         transforms = Compose([
-            RandSpatialCropd(keys=['image', 'mask', 'cortical', 'trabecular'], roi_size=config["input_size"], random_size=False, allow_missing_keys=True),
+            # RandSpatialCropd(keys=['image', 'mask', 'cortical', 'trabecular'], roi_size=config["input_size"], random_size=False, allow_missing_keys=True),
             ScaleIntensityRanged(keys=['image'],a_min=0, a_max=5, b_min=-1.0, b_max=1.0, clip=True),
             ToTensord(keys=['image', 'mask', 'cortical', 'trabecular'], allow_missing_keys=True)
         ])
 
-    return transforms
+    crop = Compose([RandSpatialCropd(keys=['image', 'mask', 'cortical', 'trabecular'], roi_size=config["input_size"], random_size=False, allow_missing_keys=True)])
+    identity = lambda x: x
+    return transforms, identity if split == "test" else crop
               
 

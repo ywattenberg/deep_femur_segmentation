@@ -34,33 +34,46 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
         with open(os.path.join(full_path, "image_stats.yaml"), "r") as f:
             image_stats = yaml.load(f, Loader=yaml.FullLoader)
         sample_name = image_stats["name"]
-        image = np.load(os.path.join(full_path, f"{sample_name}_seg.npy"))
-        mask = np.load(os.path.join(full_path, f"{sample_name}_outer.npy"))
+        image = np.load(os.path.join(full_path, f"{sample_name}_image.npy"))
+        mask = np.load(os.path.join(full_path, f"{sample_name}_outer_dicom.npy"))
 
-        aug_dict = {"image": image, "mask": mask}
+        mask_offset = image_stats["outer_offset"]
+        offset_mask = np.zeros_like(image, dtype=bool)
+        offset_mask[:, mask_offset[0]:mask_offset[0]+mask.shape[1], mask_offset[1]:mask_offset[1]+mask.shape[2]] = mask
+        offset_mask = np.expand_dims(offset_mask, 0)
+
+        aug_dict = {"image": image, "mask": offset_mask}
 
         if self.with_cort_and_trab:
+
             cortical = np.load(os.path.join(full_path, f"{sample_name}_cortical.npy"))
             trabecular = np.load(os.path.join(full_path, f"{sample_name}_trabecular.npy"))
-            aug_dict["cortical"] = cortical
-            aug_dict["trabecular"] = trabecular
 
-        min_size = list(image.shape)
-        for key in aug_dict.keys():
-            for i in range(3):
-                min_size[i] = min(min_size[i], aug_dict[key].shape[i])
+            cortical_offset = image_stats["cortical_offset"]
+            trabecular_offset = image_stats["trabecular_offset"]
+            offset_cortical = np.zeros_like(image, dtype=bool)
+            offset_trabecular = np.zeros_like(image, dtype=bool)
 
-        # Crop image and mask to same size
-        for key in aug_dict.keys():
-            aug_dict[key] = aug_dict[key][0:min_size[0], 0:min_size[1], 0:min_size[2]]
+            offset_cortical[:, cortical_offset[0]:cortical_offset[0]+cortical.shape[1], cortical_offset[1]:cortical_offset[1]+cortical.shape[2]] = cortical
+            offset_trabecular[:, trabecular_offset[0]:trabecular_offset[0]+trabecular.shape[1], trabecular_offset[1]:trabecular_offset[1]+trabecular.shape[2]] = trabecular
+            offset_cortical = np.expand_dims(offset_cortical, 0)
+            offset_trabecular = np.expand_dims(offset_trabecular, 0)
+
+            aug_dict["cortical"] = offset_mask * offset_cortical
+            aug_dict["trabecular"] = offset_mask * offset_trabecular
 
         aug_dict["image"] = np.expand_dims(aug_dict["image"], 0)
         
         # Apply transforms
-        aug_dict = self.augmentation(aug_dict)
+        while True:
+            cropped_dict = self.augmentation[1](aug_dict)
+            if cropped_dict["mask"].sum() > np.prod(self.config["input_size"]) * 0.1:
+                break
+    
+        aug_dict = self.augmentation[0](cropped_dict)
         out = list(aug_dict.values())
         image = out[0]
-        mask = torch.stack(out[1:])
+        mask = torch.cat(out[1:], dim=0)
         return image, mask
 
         

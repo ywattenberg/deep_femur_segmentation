@@ -1,7 +1,7 @@
 from monai.networks.nets import basic_unet, unet
 from monai.networks.blocks.convolutions import Convolution, ResidualUnit
 
-
+import torch
 from torch import nn
 
 class BasicUNet(nn.Module):
@@ -156,16 +156,25 @@ class UpsampleUNet_new(unet.UNet):
 
             return self._get_connection_block(down, up, subblock)
 
-        self.model = _create_block(self._config["features"][0],self._config["features"][0],self._config["features"][1:], self._config["strides"][1:] , False)
-        down = self._get_down_layer(in_channels, 64, 1, True)
-        up = self._get_up_layer(self._config["features"][0]*2, out_channels, 1, True)
+        self.model = _create_block(self._config["features"][0]//2,self._config["features"][0]//2,self._config["features"][1:], self._config["strides"][1:] , False)
+        down = self._get_down_layer(in_channels, self._config["features"][0]//2, 2, False)
+        up = self._get_up_layer(self._config["features"][0], self._config["features"][0]//2, 2, False)
         self.model = self._get_connection_block(down, up, self.model)
-        self.model = nn.Sequential(down)
+        self.deepupsample = self._get_up_layer(self._config["features"][0]//2, self._config["features"][0]//2, 2, True)
+        self.skipupsample = self._get_up_layer(in_channels, self._config["features"][0]//2, 2, True)
+        self.top_layer = self._get_up_layer(self._config["features"][0], out_channels, 1, True)
+        
 
 
 
-    def forward(self, x):
-        return self.model(x)
+    def forward(self, input):
+        x = self.model(input)
+        x = self.deepupsample(x)
+        skip = self.skipupsample(input)
+        x = torch.cat((x, skip), dim=1)
+        x = self.top_layer(x)
+        return x
+        
     
 
             

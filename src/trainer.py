@@ -5,6 +5,7 @@ from datetime import datetime
 from torch.utils.data import DataLoader, random_split, Subset
 from monai.losses import DiceLoss
 import monai.metrics as monai_metrics
+from monai.metrics import DiceMetric
 
 import pandas as pd
 import numpy as np
@@ -89,7 +90,7 @@ class Trainer:
                 elif metric.upper() == "L1Loss" or metric.upper() == "L1":
                     self.test_metrics.append(torch.nn.L1Loss())
                 elif metric.upper() == "DICE" or metric.upper() == "DICELOSS":
-                    self.test_metrics.append(monai_metrics.compute_generalized_dice)
+                    self.test_metrics.append(DiceMetric(include_background=False, reduction="mean"))
                 elif metric.upper() == "ACCURACY":
                     self.test_metrics.append(accuracy_score)
                 elif metric.upper() == "IOU":

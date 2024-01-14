@@ -4,7 +4,7 @@ output_size: [128,128,128]
 use_accelerator: True
 augmentation: True
 use_cortical_and_trabecular: True
-base_path: "C:\\Users\\Yannick\\Documents\\repos\\deep_femur_segmentation\\data\\HRpQCT_annotated\\numpy"
+base_path: "C:\\Users\\Yannick\\Documents\\repos\\deep_femur_segmentation\\data\\HRpQCT_aim\\numpy"
 seed: 2001
 augmentation_params:
   rotation_range: [45,45,45]
@@ -32,13 +32,14 @@ model:
   bias: True
   norm: "BATCH"
 trainer:
+  split_test: 0.2
   device: "cuda"
-  batch_size: 32
+  batch_size: 16
   num_workers: 8
-  epochs: 50
+  epochs: 200
   shuffle: True
   name: "Segmentation_UNet"
-  test_metrics: ["DiceLoss", "Accuracy", "IoU"]
+  test_metrics: ["Dice"]
   epochs_between_safe: 1
   batches_between_safe: 200
   split_random: False

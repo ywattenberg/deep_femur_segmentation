@@ -12,6 +12,8 @@ from skimage.util import random_noise
 from .transforms import get_image_augmentation
 from .utils import get_inital_crop_size
 
+from utils.dtypes import TORCH_DTYPES, NUMPY_DTYPES
+
 class FemurImageDataset(Dataset):
     """Femur Image Dataset"""
 
@@ -43,13 +45,13 @@ class FemurImageDataset(Dataset):
         else:
             self._device = torch.device("cpu")
 
-        dtypes = {"float32": np.float32, "float16": np.float16, "float64": np.float64, "float": np.float32}
-        self._dtype = dtypes[config["dtype"]]
+        self.np_dtype = NUMPY_DTYPES[config["dtype"]]
+        self.torch_dtype = TORCH_DTYPES[config["dtype"]]
 
         if config["augmentation"]:
             self.augmentation = get_image_augmentation(config, split)
         else:
-            self.augmentation = get_image_augmentation(config, "test")
+            self.augmentation = get_image_augmentation(config, "val")
         
         self.sample_paths = pd.read_csv(config["context_csv_path"])
         self.PCCT_paths = self.sample_paths["PCCT_path"]
@@ -114,9 +116,9 @@ class FemurImageDataset(Dataset):
         #             HRpQCT_images.append(np.load(file))
 
         for i in range(start, end):
-            PCCT_images.append(np.load(os.path.join(PCCT_folder, f"{i}.npy").astype(self._dtype)))
+            PCCT_images.append(np.load(os.path.join(PCCT_folder, f"{i}.npy")).astype(self.np_dtype))
         for i in range(int(start*self._scale_factor[0]), int(end*self._scale_factor[0])):
-            HRpQCT_images.append(np.load(os.path.join(HRpQCT_folder, f"{i}.npy").astype(self._dtype)))
+            HRpQCT_images.append(np.load(os.path.join(HRpQCT_folder, f"{i}.npy")).astype(self.np_dtype))
         # print(f"Slices {start} to {end} loaded from {PCCT_folder} and {int(start*self._scale_factor[0])} to {int(end*self._scale_factor[0])} from  {HRpQCT_folder}")
         
         missing_pcct = self._input_size[0] - len(PCCT_images)
@@ -167,12 +169,12 @@ class FemurImageDataset(Dataset):
         # print(f"Time to augment: {time.time() - time_at_aug}ms")
         # If images are not tensors convert them to tensors
         if not torch.is_tensor(PCCT_images):
-            PCCT_images = torch.from_numpy(PCCT_images)
+            PCCT_images = torch.from_numpy(PCCT_images, dtype=self.torch_dtype)
         if not torch.is_tensor(HRpQCT_images):
-            HRpQCT_images = torch.from_numpy(HRpQCT_images)
+            HRpQCT_images = torch.from_numpy(HRpQCT_images, dtype=self.torch_dtype)
 
-        # PCCT_images = PCCT_images.to(dtype=torch.float32)
-        # HRpQCT_images = HRpQCT_images.to(dtype=torch.float32)
+        PCCT_images = PCCT_images.to(dtype=self.torch_dtype)
+        HRpQCT_images = HRpQCT_images.to(dtype=self.torch_dtype)
         # print(f"Time to get item: {time.time() - time_at_start}ms")
         return PCCT_images, HRpQCT_images
 

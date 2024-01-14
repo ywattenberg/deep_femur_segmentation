@@ -164,3 +164,8 @@ data/
 
 # Elastix installation files
 elastix
+
+# TensorBoard log files
+tensorboard
+
+models/
