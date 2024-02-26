@@ -92,11 +92,12 @@ def get_image_augmentation(config, split):
         #     RandAdjustContrastd(keys=['image'], prob=config["augmentation_params"]["p_contrast"], gamma=config["augmentation_params"]["contrast_gamma"]),
         #     ToTensord(keys=['image', 'labels'])
         # ])
-         
+        pcct_intensity_scale = config["augmentation_params"]["pcct_intensity_scale"]
+        hrpqc_intensity_scale = config["augmentation_params"]["hrpqc_intensity_scale"]
         transforms = Compose([
             CustomCropRandomd(keys=['image', 'labels'], roi_size_image=config["input_size"], roi_size_label=config["output_size"]),
-            ScaleIntensityRanged(keys=['image'],a_min=0, a_max=3, b_min=-1.0, b_max=1.0, clip=True),
-            ScaleIntensityRanged(keys=['labels'],a_min=-1.5, a_max=1.5, b_min=-1.0, b_max=1.0, clip=True),
+            ScaleIntensityRanged(keys=['image'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
+            ScaleIntensityRanged(keys=['labels'],a_min=hrpqc_intensity_scale[0], a_max=hrpqc_intensity_scale[1] , b_min=hrpqc_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
             RandRotated(keys=['image', 'labels'], range_x=rotation_range, range_y=rotation_range, range_z=rotation_range, prob=config["augmentation_params"]["p_rotation"]),
             RandZoomd(keys=['image', 'labels'], min_zoom=config["augmentation_params"]["min_zoom"], max_zoom=config["augmentation_params"]["max_zoom"], prob=config["augmentation_params"]["p_zoom"]),
             # CenterSpatialCropd(keys=['image'], roi_size=config["input_size"]),
@@ -136,10 +137,13 @@ def get_image_augmentation(config, split):
 def get_image_segmentation_augmentation(config, split):
 
     rotation_range = [i / 180 * np.pi for i in config['augmentation_params']['rotation_range']]
+    pcct_intensity_scale = config["augmentation_params"]["pcct_intensity_scale"]
+    hrpqc_intensity_scale = config["augmentation_params"]["hrpqc_intensity_scale"]
 
     if split == "train":
          transforms = Compose([
-            ScaleIntensityRanged(keys=['image'],a_min=0, a_max=5, b_min=-1.0, b_max=1.0, clip=True),
+            ScaleIntensityRanged(keys=['pcct'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
+            ScaleIntensityRanged(keys=['image'],a_min=hrpqc_intensity_scale[0], a_max=hrpqc_intensity_scale[1] , b_min=hrpqc_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
             RandRotated(keys=['image', 'mask', 'cortical', 'trabecular', 'pcct'], range_x=rotation_range, range_y=rotation_range, range_z=rotation_range, prob=config["augmentation_params"]["p_rotation"]),
             RandZoomd(keys=['image',  'mask', 'cortical', 'trabecular', 'pcct'], allow_missing_keys=True, min_zoom=config["augmentation_params"]["min_zoom"], max_zoom=config["augmentation_params"]["max_zoom"], prob=config["augmentation_params"]["p_zoom"]),
             # CenterSpatialCropd(keys=['image'], roi_size=config["input_size"]),
