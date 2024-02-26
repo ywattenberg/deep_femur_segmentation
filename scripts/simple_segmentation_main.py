@@ -49,7 +49,7 @@ def main():
     )
     model = model.to("cuda")
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-8)
-    trainer = Trainer(model, dataset, val_dataset, DiceLoss(to_onehot_y=False, sigmoid=True), optimizer, config)
+    trainer = Trainer(model, dataset, val_dataset, DiceLoss(smooth_nr=0, smooth_dr=1e-5, squared_pred=True, to_onehot_y=False, sigmoid=True), optimizer, config)
     trainer.train_test(epochs_between_test=50)
 
 if __name__ == "__main__":

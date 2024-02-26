@@ -159,7 +159,7 @@ class Trainer:
                 self.optimizer.zero_grad()
                 pred = self.model(input.to(self.device))
                 mask = mask.to(self.device)
-                loss = self.loss_fn(pred, mask)
+                loss = self.loss_fn(pred, mask[:1])
                 loss.backward()
                 self.optimizer.step()
                 running_loss = np.append(running_loss, loss.item())
@@ -192,7 +192,7 @@ class Trainer:
                 for batch, (input, _, y) in enumerate(pbar):
                     pred = self.model(input.to(self.device))
                     y = y.to(self.device)
-                    dice_metric(pred, y)
+                    dice_metric(pred, y[:1])
                 test_loss[0] += dice_metric.aggregate().item()
                 dice_metric.reset()
                     
