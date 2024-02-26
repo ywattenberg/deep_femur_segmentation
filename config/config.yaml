@@ -26,6 +26,7 @@ augmentation_params:
 model:
   spatial_dims: 3
   features:  [64, 64, 128, 128, 256, 256] # [16,32,64,128,256,256]
+  upsample_features: 64
   strides: [2, 2, 2, 2, 2, 2]
   dropout: 0.3
   activation: "ReLU"
@@ -38,7 +39,7 @@ trainer:
   num_workers: 8
   epochs: 10
   shuffle: True
-  name: "BasicUNet_L1_no_augmentation"
+  name: "NewUNet_No_Augmentation"
   test_metrics: ["L1", "MSE"]
   epochs_between_safe: 1
   batches_between_safe: 200

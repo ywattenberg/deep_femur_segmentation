@@ -12,7 +12,7 @@ from skimage.util import random_noise
 from .transforms import get_image_augmentation
 from .utils import get_inital_crop_size
 
-from utils.dtypes import TORCH_DTYPES, NUMPY_DTYPES
+from ..utils.dtypes import TORCH_DTYPES, NUMPY_DTYPES
 
 class FemurImageDataset(Dataset):
     """Femur Image Dataset"""
@@ -51,7 +51,7 @@ class FemurImageDataset(Dataset):
         if config["augmentation"]:
             self.augmentation = get_image_augmentation(config, split)
         else:
-            self.augmentation = get_image_augmentation(config, "val")
+            self.augmentation = get_image_augmentation(config, split if split == "test" else "val")
         
         self.sample_paths = pd.read_csv(config["context_csv_path"])
         self.PCCT_paths = self.sample_paths["PCCT_path"]

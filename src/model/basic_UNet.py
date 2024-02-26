@@ -156,23 +156,15 @@ class UpsampleUNet_new(unet.UNet):
 
             return self._get_connection_block(down, up, subblock)
 
-        self.model = _create_block(self._config["features"][0]//2,self._config["features"][0]//2,self._config["features"][1:], self._config["strides"][1:] , False)
-        down = self._get_down_layer(in_channels, self._config["features"][0]//2, 2, False)
-        up = self._get_up_layer(self._config["features"][0], self._config["features"][0]//2, 2, False)
+        self.model = _create_block(self._config["features"][0],self._config["features"][0],self._config["features"][1:], self._config["strides"][1:] , False)
+        down = self._get_down_layer(in_channels, self._config["features"][0], 2, False)
+        up = self._get_up_layer(self._config["features"][0]*2, self._config["upsample_features"], 2, False)
         self.model = self._get_connection_block(down, up, self.model)
-        self.deepupsample = self._get_up_layer(self._config["features"][0]//2, self._config["features"][0]//2, 2, True)
-        self.skipupsample = self._get_up_layer(in_channels, self._config["features"][0]//2, 2, True)
-        self.top_layer = self._get_up_layer(self._config["features"][0], out_channels, 1, True)
+        self.deepupsample = self._get_up_layer(self._config["upsample_features"], out_channels, 2, True)
         
-
-
-
     def forward(self, input):
         x = self.model(input)
         x = self.deepupsample(x)
-        skip = self.skipupsample(input)
-        x = torch.cat((x, skip), dim=1)
-        x = self.top_layer(x)
         return x
         
     

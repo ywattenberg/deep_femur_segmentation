@@ -31,8 +31,9 @@ def split_series(path: str, num_of_parts: int):
         os.makedirs(os.path.join(path, f"part_{i}"), exist_ok=True)
     
     files = os.listdir(path)
+    print
     # File is a DICOM file if it ends with .dcm or .DCM_1 (for legacy reasons)
-    image_files = [file for file in files if file.endswith(".dcm") or file.endswith(".DCM_1")]
+    image_files = [file for file in files if file.lower().endswith(".dcm") or file.lower().endswith(".dcm_1")]
     image_files.sort()
     num_of_images = len(image_files)
     num_of_images_per_part = num_of_images // num_of_parts

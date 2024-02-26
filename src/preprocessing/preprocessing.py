@@ -66,7 +66,7 @@ def reverse_slice_order(image: sitk.Image):
     
     return image
 
-def cutout_cast_HR_pQCT(image: sitk.Image, fill_value: int = None):
+def cutout_cast_HR_pQCT(image: sitk.Image, fill_value: int = None, mask: np.array = None):
     """
     This function cuts out the cast that is used to hold the sample in place during scanning.
     The function assumes that the cast is stable in the z-direction, and that the sample is not. Further it assumes that the first/last slices are empty except for the cast.
@@ -97,19 +97,22 @@ def cutout_cast_HR_pQCT(image: sitk.Image, fill_value: int = None):
         threshold = max_value * 0.2
         normalized = True
 
-    threshold  = calculate_threshold_from_fraction(first_slice, 0.995)
+    threshold  = calculate_threshold_from_fraction(first_slice, 0.998)
+    if mask is None:
 
-    mask = first_slice > threshold
+        mask = first_slice > threshold
 
+        # Use morphological closing to fill in holes in the mask and dilation to make the mask larger
+        mask = skimage.morphology.closing(mask, skimage.morphology.disk(5))
+        mask = skimage.morphology.dilation(mask, skimage.morphology.disk(5))    
 
-    # Use morphological closing to fill in holes in the mask and dilation to make the mask larger
-    mask = skimage.morphology.closing(mask, skimage.morphology.disk(5))
-    mask = skimage.morphology.dilation(mask, skimage.morphology.disk(5))    
+        # Use morphological erossion to remove noise
+        mask = skimage.morphology.area_opening(mask, area_threshold=180, connectivity=2)
 
-    # Use morphological erossion to remove noise
-    mask = skimage.morphology.area_opening(mask, area_threshold=150, connectivity=2)
-
-    inverse_mask = np.logical_not(mask)
+        mask = skimage.morphology.closing(mask, skimage.morphology.disk(8))
+        mask = skimage.morphology.dilation(mask, skimage.morphology.disk(8))
+    print(f"Mask shape: {mask.shape}")
+    inverse_mask = np.logical_not(np.squeeze(mask))
 
     if not normalized and fill_value is None:
         logging.warning("The image is not normalized and no fill value is given. Using the minimum of voxel value as fill value.")

@@ -30,7 +30,6 @@ def main(path, roi):
     min_value = np.min(image)
     image = None
     # Transform file
-    os.path.join(path, "TransformParameters.0.txt")
     with open(os.path.join(path, "TransformParameters.0.txt"), "r") as f:
         # Find the line with the DefaultPixelValue value (DefaultPixelValue 0)
         lines = f.readlines()
@@ -47,9 +46,10 @@ def main(path, roi):
     subprocess.run(["./elastix/transformix", "-in", pcct_file, "-out", path, "-tp", os.path.join(path, "TransformParameters.1.txt")])
 
     # Read transformed image
+    return
     image = sitk.ReadImage(os.path.join(path, "result.mha"))
     image = sitk.GetArrayFromImage(image)
-    image = image[:, roi[2]:roi[3], roi[0]:roi[1]]
+    #image = image[:, roi[2]:roi[3], roi[0]:roi[1]]
     for i in range(0, image.shape[0], 250):
         plt.imshow(image[i, :, :,])
         plt.savefig(f"{name}_image_{i}.png")
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
     folders = os.listdir(image_folder_path)
     
-    dict = {"1":[395, 835, 320, 1000], "3": [360,800,250,1010], "5":[315,850,375,955], "7":[330,775,285,970], "12":[360,825,230,1000],"8":[330, 855, 265,1080]}
+    dict = {7:"", }#6:"", 4:"", 11:""}
 
     
     for key, roi in dict.items():
