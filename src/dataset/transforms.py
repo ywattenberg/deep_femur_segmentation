@@ -27,6 +27,7 @@ from monai.transforms import (
     HistogramNormalized,
     CopyItemsd,
     ThresholdIntensityd,
+    GaussianSmoothd,
     Lambdad,
 )
 import logging
@@ -149,6 +150,7 @@ def get_image_segmentation_augmentation(config, split):
         ScaleIntensityRanged(keys=['pcct'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqct_intensity_scale[3], clip=True),
         ScaleIntensityRanged(keys=['image'],a_min=hrpqct_intensity_scale[0], a_max=hrpqct_intensity_scale[1] , b_min=hrpqct_intensity_scale[2], b_max=hrpqct_intensity_scale[3], clip=True),
         CopyItemsd(keys=["image"], times=1, names=["mask"]),
+        GaussianSmoothd(keys=["image"], sigma=1.0/(6.0*np.pi)),
         Lambdad(keys=["mask"], func=mask_fn),
     ]
 

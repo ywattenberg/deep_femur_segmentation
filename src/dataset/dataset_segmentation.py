@@ -64,7 +64,6 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
 
         # Load PCCT image region
         sample["pcct"] = pcct
-        print(f"Loading {sample_name} at {index}")
         if self.with_cort_and_trab:
             cortical = np.load(os.path.join(full_path, f"{sample_name}_cortical.npy"))
             if cortical.shape[0] < image.shape[1]:
@@ -103,6 +102,7 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
                 cropped_dict = self.augmentation[1](aug_dict)
                 if cropped_dict["mask"].sum() > np.prod(cropped_dict["mask"].shape) * 0.1:
                     break
+        del aug_dict["mask"]
         # print([(k, v.shape) for k,v in cropped_dict.items()])
         aug_dict = self.augmentation[0](cropped_dict)
         image = aug_dict["image"]
@@ -112,6 +112,7 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
             masks = []
             masks.append(aug_dict["cortical"] * aug_dict["mask"] )
             masks.append(aug_dict["trabecular"] * aug_dict["mask"])
+            masks.append(aug_dict["mask"])
         mask = torch.cat(masks, dim=0).to(torch.float32)
         mask = torch.nn.functional.interpolate(mask.unsqueeze(0), scale_factor=0.5, mode="nearest-exact").squeeze(0)
         return pcct, image, mask
