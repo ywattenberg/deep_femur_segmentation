@@ -27,6 +27,7 @@ from monai.transforms import (
     HistogramNormalized,
     CopyItemsd,
     ThresholdIntensityd,
+    Lambdad,
 )
 import logging
 from src.dataset.utils import get_inital_crop_size
@@ -141,12 +142,13 @@ def get_image_segmentation_augmentation(config, split):
     rotation_range = [i / 180 * np.pi for i in config['augmentation_params']['rotation_range']]
     pcct_intensity_scale = config["augmentation_params"]["pcct_intensity_scale"]
     hrpqc_intensity_scale = config["augmentation_params"]["hrpqc_intensity_scale"]
+    mask_fn = lambda mask: mask > config["augmentation_params"]["mask_threshold"]
 
     default_transforms = [
         ScaleIntensityRanged(keys=['pcct'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
         ScaleIntensityRanged(keys=['image'],a_min=hrpqc_intensity_scale[0], a_max=hrpqc_intensity_scale[1] , b_min=hrpqc_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
         CopyItemsd(keys=["image"], times=1, names=["mask"]),
-        ThresholdIntensityd(keys=["mask"], threshold=config["augmentation_params"]["mask_threshold"], above=True, cval=1, below=False),
+        Lambdad(keys=["mask"], func=mask_fn),
     ]
 
     if split == "train":
