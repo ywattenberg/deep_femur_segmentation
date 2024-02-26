@@ -11,7 +11,7 @@ seed: 2001
 mask_threshold: 0.7
 augmentation_params:
   pcct_intensity_scale: [0, 3, -1, 1]
-  hrpct_intensity_scale: [-1.5, 1.5, -1, 1]
+  hrpqct_intensity_scale: [-1.5, 1.5, -1, 1]
   rotation_range: [45,45,45]
   p_rotation: 0.8
   min_zoom: 0.9
