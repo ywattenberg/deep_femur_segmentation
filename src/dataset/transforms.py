@@ -96,11 +96,11 @@ def get_image_augmentation(config, split):
         #     ToTensord(keys=['image', 'labels'])
         # ])
         pcct_intensity_scale = config["augmentation_params"]["pcct_intensity_scale"]
-        hrpqc_intensity_scale = config["augmentation_params"]["hrpqc_intensity_scale"]
+        hrpqct_intensity_scale = config["augmentation_params"]["hrpqct_intensity_scale"]
         transforms = Compose([
             CustomCropRandomd(keys=['image', 'labels'], roi_size_image=config["input_size"], roi_size_label=config["output_size"]),
-            ScaleIntensityRanged(keys=['image'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
-            ScaleIntensityRanged(keys=['labels'],a_min=hrpqc_intensity_scale[0], a_max=hrpqc_intensity_scale[1] , b_min=hrpqc_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
+            ScaleIntensityRanged(keys=['image'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqct_intensity_scale[3], clip=True),
+            ScaleIntensityRanged(keys=['labels'],a_min=hrpqct_intensity_scale[0], a_max=hrpqct_intensity_scale[1] , b_min=hrpqct_intensity_scale[2], b_max=hrpqct_intensity_scale[3], clip=True),
             RandRotated(keys=['image', 'labels'], range_x=rotation_range, range_y=rotation_range, range_z=rotation_range, prob=config["augmentation_params"]["p_rotation"]),
             RandZoomd(keys=['image', 'labels'], min_zoom=config["augmentation_params"]["min_zoom"], max_zoom=config["augmentation_params"]["max_zoom"], prob=config["augmentation_params"]["p_zoom"]),
             # CenterSpatialCropd(keys=['image'], roi_size=config["input_size"]),
@@ -119,15 +119,15 @@ def get_image_augmentation(config, split):
         transforms = Compose([
             # RandSpatialCropd(keys=['image', 'labels'], roi_size=config["output_size"], random_size=False),
             CustomCropRandomd(keys=['image', 'labels'], roi_size_image=config["input_size"], roi_size_label=config["output_size"]),
-            ScaleIntensityRanged(keys=['image'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
-            ScaleIntensityRanged(keys=['labels'],a_min=hrpqc_intensity_scale[0], a_max=hrpqc_intensity_scale[1] , b_min=hrpqc_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
+            ScaleIntensityRanged(keys=['image'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqct_intensity_scale[3], clip=True),
+            ScaleIntensityRanged(keys=['labels'],a_min=hrpqct_intensity_scale[0], a_max=hrpqct_intensity_scale[1] , b_min=hrpqct_intensity_scale[2], b_max=hrpqct_intensity_scale[3], clip=True),
             ToTensord(keys=['image', 'labels'])
             ])
         print("VAL")
     elif split == "test":
                 transforms = Compose([
-                    ScaleIntensityRanged(keys=['image'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
-                    ScaleIntensityRanged(keys=['labels'],a_min=hrpqc_intensity_scale[0], a_max=hrpqc_intensity_scale[1] , b_min=hrpqc_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
+                    ScaleIntensityRanged(keys=['image'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqct_intensity_scale[3], clip=True),
+                    ScaleIntensityRanged(keys=['labels'],a_min=hrpqct_intensity_scale[0], a_max=hrpqct_intensity_scale[1] , b_min=hrpqct_intensity_scale[2], b_max=hrpqct_intensity_scale[3], clip=True),
                     # RandSpatialCropd(keys=['image', 'labels'], roi_size=config["output_size"], random_size=False),
                     # CustomCropRandomd(keys=['image', 'labels'], roi_size_image=config["input_size"], roi_size_label=config["output_size"]),
                     ToTensord(keys=['image', 'labels'])
@@ -141,12 +141,13 @@ def get_image_segmentation_augmentation(config, split):
 
     rotation_range = [i / 180 * np.pi for i in config['augmentation_params']['rotation_range']]
     pcct_intensity_scale = config["augmentation_params"]["pcct_intensity_scale"]
-    hrpqc_intensity_scale = config["augmentation_params"]["hrpqc_intensity_scale"]
+    hrpqct_intensity_scale = config["augmentation_params"]["hrpqct_intensity_scale"]
     mask_fn = lambda mask: mask > config["augmentation_params"]["mask_threshold"]
 
+
     default_transforms = [
-        ScaleIntensityRanged(keys=['pcct'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
-        ScaleIntensityRanged(keys=['image'],a_min=hrpqc_intensity_scale[0], a_max=hrpqc_intensity_scale[1] , b_min=hrpqc_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
+        ScaleIntensityRanged(keys=['pcct'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqct_intensity_scale[3], clip=True),
+        ScaleIntensityRanged(keys=['image'],a_min=hrpqct_intensity_scale[0], a_max=hrpqct_intensity_scale[1] , b_min=hrpqct_intensity_scale[2], b_max=hrpqct_intensity_scale[3], clip=True),
         CopyItemsd(keys=["image"], times=1, names=["mask"]),
         Lambdad(keys=["mask"], func=mask_fn),
     ]
