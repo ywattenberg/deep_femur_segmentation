@@ -116,15 +116,15 @@ def get_image_augmentation(config, split):
         transforms = Compose([
             # RandSpatialCropd(keys=['image', 'labels'], roi_size=config["output_size"], random_size=False),
             CustomCropRandomd(keys=['image', 'labels'], roi_size_image=config["input_size"], roi_size_label=config["output_size"]),
-            ScaleIntensityRanged(keys=['image'],a_min=0, a_max=3, b_min=-1.0, b_max=1.0, clip=True),
-            ScaleIntensityRanged(keys=['labels'],a_min=-1.5, a_max=1.5, b_min=-1.0, b_max=1.0, clip=True),
+            ScaleIntensityRanged(keys=['image'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
+            ScaleIntensityRanged(keys=['labels'],a_min=hrpqc_intensity_scale[0], a_max=hrpqc_intensity_scale[1] , b_min=hrpqc_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
             ToTensord(keys=['image', 'labels'])
             ])
         print("VAL")
     elif split == "test":
                 transforms = Compose([
-                    ScaleIntensityRanged(keys=['image'],a_min=0, a_max=3, b_min=-1.0, b_max=1.0, clip=True),
-                    ScaleIntensityRanged(keys=['labels'],a_min=-1.5, a_max=1.5, b_min=-1.0, b_max=1.0, clip=True),
+                    ScaleIntensityRanged(keys=['image'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
+                    ScaleIntensityRanged(keys=['labels'],a_min=hrpqc_intensity_scale[0], a_max=hrpqc_intensity_scale[1] , b_min=hrpqc_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
                     # RandSpatialCropd(keys=['image', 'labels'], roi_size=config["output_size"], random_size=False),
                     # CustomCropRandomd(keys=['image', 'labels'], roi_size_image=config["input_size"], roi_size_label=config["output_size"]),
                     ToTensord(keys=['image', 'labels'])
@@ -160,14 +160,16 @@ def get_image_segmentation_augmentation(config, split):
         ])
     elif split == "test":
         transforms = Compose([
-            ScaleIntensityRanged(keys=['image'],a_min=0, a_max=5, b_min=-1.0, b_max=1.0, clip=True),
+            ScaleIntensityRanged(keys=['pcct'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
+            ScaleIntensityRanged(keys=['image'],a_min=hrpqc_intensity_scale[0], a_max=hrpqc_intensity_scale[1] , b_min=hrpqc_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
             # RandSpatialCropd(keys=['image', 'labels'], roi_size=config["output_size"], random_size=False),
             # CustomCropRandomd(keys=['image', 'labels'], roi_size_image=config["input_size"], roi_size_label=config["output_size"]),
             ToTensord(keys=['image', 'mask', 'cortical', 'trabecular', 'pcct'], allow_missing_keys=True)
         ])
     elif split == "val":
         transforms = Compose([
-            ScaleIntensityRanged(keys=['image'],a_min=0, a_max=5, b_min=-1.0, b_max=1.0, clip=True),
+            ScaleIntensityRanged(keys=['pcct'],a_min=pcct_intensity_scale[0], a_max=pcct_intensity_scale[1], b_min=pcct_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
+            ScaleIntensityRanged(keys=['image'],a_min=hrpqc_intensity_scale[0], a_max=hrpqc_intensity_scale[1] , b_min=hrpqc_intensity_scale[2], b_max=hrpqc_intensity_scale[3], clip=True),
             ToTensord(keys=['image', 'mask', 'cortical', 'trabecular', 'pcct'], allow_missing_keys=True)
         ])
 
