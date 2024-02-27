@@ -16,10 +16,10 @@ torch.set_default_dtype(torch.float32)
 
 def main():
     config = yaml.safe_load(open("config/segmentation_config.yaml", "r"))
-    config["context_csv_path"] = r"HRpQCT_aim\\Cropped_regions.csv"
+    # config["context_csv_path"] = r"HRpQCT_aim\\Cropped_regions.csv"
     if "seed" in config:
         torch.manual_seed(config["seed"])
-    dataset = FemurSegmentationDataset(config, split="test")
+    dataset = FemurSegmentationDataset(config, split="train")
 
     # for i in range(len(dataset)):
     #     x, y, mask = dataset[i]
@@ -50,7 +50,7 @@ def main():
     model = model.to("cuda")
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-8)
     trainer = Trainer(model, dataset, val_dataset, DiceLoss(smooth_nr=0, smooth_dr=1e-5, squared_pred=True, to_onehot_y=False, sigmoid=True), optimizer, config)
-    trainer.train_test(epochs_between_test=50)
+    trainer.train_test(epochs_between_test=10)
 
 if __name__ == "__main__":
     main()
