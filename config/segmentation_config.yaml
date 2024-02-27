@@ -43,7 +43,7 @@ trainer:
   num_workers: 8
   epochs: 200
   shuffle: True
-  name: "Trab_UNet"
+  name: "Segmentation_UNet"
   test_metrics: ["Dice"]
   epochs_between_safe: 1
   batches_between_safe: 200
