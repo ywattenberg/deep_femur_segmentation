@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
     folders = os.listdir(image_folder_path)
     
-    dict = {7:"", }#6:"", 4:"", 11:""}
+    dict = {4:"", }#6:"", 4:"", 11:""}
 
     
     for key, roi in dict.items():

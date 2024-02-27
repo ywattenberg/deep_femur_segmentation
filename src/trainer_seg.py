@@ -2,7 +2,7 @@ import torch
 import time
 import os
 from datetime import datetime
-from torch.utils.data import DataLoader, random_split, Subset
+from torch.utils.data import DataLoader, random_split, Subset, RandomSampler
 from monai.losses import DiceLoss
 import monai.metrics as monai_metrics
 from monai.metrics import DiceMetric
@@ -117,11 +117,13 @@ class Trainer:
         self.model = model.to(self.device)
         self.loss_fn = loss_fn
 
-        self.train_dataloader = DataLoader(
-            train_data, batch_size=self.batch_size, shuffle=config["shuffle"], num_workers=config["num_workers"], persistent_workers=True
+        train_sampler = RandomSampler(train_data, replacement=True, num_samples=16)
+        self.train_dataloader = DataLoader(train_data,
+            sampler=train_sampler, batch_size=self.batch_size, shuffle=False, num_workers=config["num_workers"], persistent_workers=True
         )
-        self.val_dataloader = DataLoader(
-            val_data, batch_size=self.batch_size, shuffle=config["shuffle"], num_workers=config["num_workers"],
+        validation_sampler = RandomSampler(val_data, replacement=True, num_samples=16)
+        self.val_dataloader = DataLoader(val_data,
+            sampler=validation_sampler, batch_size=self.batch_size, shuffle=False, num_workers=config["num_workers"],
             persistent_workers=True
         )
         
@@ -159,7 +161,7 @@ class Trainer:
                 self.optimizer.zero_grad()
                 pred = self.model(input.to(self.device))
                 mask = mask.to(self.device)
-                loss = self.loss_fn(pred, mask[:1])
+                loss = self.loss_fn(pred, mask[:,:2])
                 loss.backward()
                 self.optimizer.step()
                 running_loss = np.append(running_loss, loss.item())
@@ -192,7 +194,7 @@ class Trainer:
                 for batch, (input, _, y) in enumerate(pbar):
                     pred = self.model(input.to(self.device))
                     y = y.to(self.device)
-                    dice_metric(pred, y[:1])
+                    dice_metric(pred, y[:,:2])
                 test_loss[0] += dice_metric.aggregate().item()
                 dice_metric.reset()
                     

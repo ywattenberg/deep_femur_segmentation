@@ -102,7 +102,7 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
                 cropped_dict = self.augmentation[1](aug_dict)
                 if cropped_dict["mask"].sum() > np.prod(cropped_dict["mask"].shape) * 0.1:
                     break
-        del aug_dict["mask"]
+        del cropped_dict["mask"]
         # print([(k, v.shape) for k,v in cropped_dict.items()])
         aug_dict = self.augmentation[0](cropped_dict)
         image = aug_dict["image"]
