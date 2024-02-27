@@ -42,9 +42,7 @@ echo "CPUS:                 ${CPUS}"
 echo "GPU:                  ${CUDA_VISIBLE_DEVICES}"
 
 rsync -ah --stats /home/%u/data/numpy $TMPDIR
-rsync -ah --stats /home/%u/deep_femur_segmentation $TMPDIR
-rsync -ah --stats /home/%u/.venv $TMPDIR
 
-.venv/bin/python3 deep_femur_segmentation/scripts/simple_segmentation_main.py
+/home/%u/.venv/bin/python3 /home/%u/deep_femur_segmentation/scripts/simple_segmentation_main.py
 
 exit 0
