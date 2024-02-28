@@ -12,7 +12,7 @@
 # Exit on errors
 set -o errexit
 
-module load python/12.multigpu cudnn/8.7.0
+module load gpu python/3.11 cuda/12.3.0 cudnn/8.9.5.30-12.2
 
 
 # Set a directory for temporary files unique to the job with automatic removal at job termination
@@ -29,7 +29,6 @@ export TMPDIR
 # Adapt this to your personal preference
 cd "${TMPDIR}" || exit 1
 
-CPUS=$((${SLURM_CPUS_PER_TASK} * ${SLURM_NTASKS}))
 # Send some noteworthy information to the output log
 echo "Running on node:      $(hostname)"
 echo "In directory:         $(pwd)"
@@ -38,11 +37,10 @@ echo "SLURM_JOB_ID:         ${SLURM_JOB_ID}"
 echo "SLURM_JOB_NODELIST:   ${SLURM_JOB_NODELIST}"
 echo "SLURM_NTASKS:         ${SLURM_NTASKS}"
 echo "SLURM_CPUS_PER_TASK:  ${SLURM_CPUS_PER_TASK}"
-echo "CPUS:                 ${CPUS}"
 echo "GPU:                  ${CUDA_VISIBLE_DEVICES}"
 
-rsync -ah --stats /home/%u/data/numpy $TMPDIR
+rsync -ah --stats /data/$USER/numpy $TMPDIR
 
-/home/%u/.venv/bin/python3 /home/%u/deep_femur_segmentation/scripts/simple_segmentation_main.py
+/home/$USER/deep_femur_segmentation/.venv/bin/python3 /home/$USER/deep_femur_segmentation/scripts/simple_segmentation_main.py
 
 exit 0
