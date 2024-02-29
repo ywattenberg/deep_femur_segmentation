@@ -16,8 +16,10 @@ from src.dataset.dataset_segmentation import FemurSegmentationDataset
 
 torch.set_default_dtype(torch.float32)
 
-def main(config_path, epochs_between_test):
+def main(config_path, epochs_between_test, base_path):
     config = yaml.safe_load(open(config_path, "r"))
+    config["base_path"] = base_path
+
     # config["context_csv_path"] = r"HRpQCT_aim\\Cropped_regions.csv"
     if "seed" in config:
         torch.manual_seed(config["seed"])
@@ -44,11 +46,11 @@ def main(config_path, epochs_between_test):
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
     argparser.add_argument("--config", type=str, default="config/segmentation_config.yaml")
-    argparse.add_argument("--tmp_dir", type=str)
+    argparser.add_argument("--tmp_dir", type=str)
     argparser.add_argument("--epochs_between_test", type=int, default=10)
     args = argparser.parse_args()
-    config["base_path"] = args.tmp_dir
-    main(args.config, args.epochs_between_test)
+
+    main(args.config, args.epochs_between_test, args.tmp_dir)
 
 
 
