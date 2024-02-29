@@ -41,6 +41,6 @@ echo "GPU:                  ${CUDA_VISIBLE_DEVICES}"
 
 rsync -ah --stats /data/$USER/numpy $TMPDIR
 
-/home/$USER/deep_femur_segmentation/.venv/bin/python3 /home/$USER/deep_femur_segmentation/scripts/simple_segmentation_main.py
+/home/$USER/deep_femur_segmentation/.venv/bin/python3 /home/$USER/deep_femur_segmentation/scripts/cluster_seg_train.py --config /home/$USER/deep_femur_segmentation/config/segmentation_config.yaml --tmp_dir $TMPDIR
 
 exit 0
