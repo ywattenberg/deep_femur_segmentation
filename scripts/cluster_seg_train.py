@@ -7,6 +7,8 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import sys
 import os
+import argparse
+
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from src.trainer_seg import Trainer
@@ -14,28 +16,15 @@ from src.dataset.dataset_segmentation import FemurSegmentationDataset
 
 torch.set_default_dtype(torch.float32)
 
-def main():
-    config = yaml.safe_load(open("config/segmentation_config.yaml", "r"))
+def main(config_path, epochs_between_test):
+    config = yaml.safe_load(open(config_path, "r"))
     # config["context_csv_path"] = r"HRpQCT_aim\\Cropped_regions.csv"
     if "seed" in config:
         torch.manual_seed(config["seed"])
     dataset = FemurSegmentationDataset(config, split="train")
 
-    # for i in range(len(dataset)):
-    #     x, y, mask = dataset[i]
-    #     fig, ax = plt.subplots(2, 2, dpi=300, figsize=(10, 10))
-    #     ax[0, 0].imshow(x[0,0], cmap="gray")
-    #     ax[0,0].set_title("Input")
-    #     ax[0, 1].imshow(y[0,0], cmap="gray")
-    #     ax[0,1].set_title("Hr-pQCT")
-    #     ax[1, 0].imshow(mask[0, 0], cmap="gray")
-    #     ax[1,0].set_title("Cort")
-    #     ax[1, 1].imshow(mask[1, 0], cmap="gray")
-    #     ax[1,1].set_title("Trab")
-    #     plt.savefig(f"test/sample_{i}.png")
-
     val_config = config.copy()
-    val_config["context_csv_path"] = r"HRpQCT_aim\\numpy\\Cropped_regions_val.csv"
+    val_config["context_csv_path"] = r"numpy/Cropped_regions_val.csv"
     val_dataset = FemurSegmentationDataset(val_config, split="val")
     model = monai_nets.BasicUNetPlusPlus(
         spatial_dims=config["model"]["spatial_dims"],
@@ -50,9 +39,12 @@ def main():
     model = model.to("cuda")
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-8)
     trainer = Trainer(model, dataset, val_dataset, DiceLoss(smooth_nr=0, smooth_dr=1e-5, squared_pred=True, to_onehot_y=False, sigmoid=True), optimizer, config)
-    trainer.train_test(epochs_between_test=10)
+    trainer.train_test(epochs_between_test=epochs_between_test)
 
 if __name__ == "__main__":
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--config", type=str, default="config/segmentation_config.yaml")
+    argparser.add_argument("--epochs_between_test", type=int, default=10)
     main()
 
 
