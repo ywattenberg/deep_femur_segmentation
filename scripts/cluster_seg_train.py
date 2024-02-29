@@ -44,8 +44,13 @@ def main(config_path, epochs_between_test):
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
     argparser.add_argument("--config", type=str, default="config/segmentation_config.yaml")
+    argparse.add_argument("--tmp_dir", type=str)
     argparser.add_argument("--epochs_between_test", type=int, default=10)
-    main()
+    args = argparser.parse_args()
+    config["base_path"] = args.tmp_dir
+    main(args.config, args.epochs_between_test)
+
+
 
 
 
