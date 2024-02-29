@@ -9,9 +9,9 @@ pcct_path: "PCCT"
 mask_path: "HRpQCT_aim\\numpy"
 seed: 2001
 augmentation_params:
-  mask_threshold: 0.92
-  pcct_intensity_scale: [0, 3, -1, 1]
-  hrpqct_intensity_scale: [-1.5, 1.5, -1, 1]
+  mask_threshold: 0.94
+  pcct_intensity_scale: [0, 3.5, 0, 1]
+  hrpqct_intensity_scale: [0, 4, 0, 1]
   rotation_range: [45,45,45]
   p_rotation: 0.8
   min_zoom: 0.9
@@ -41,7 +41,7 @@ trainer:
   device: "cuda"
   batch_size: 16
   num_workers: 8
-  epochs: 200
+  epochs: 10
   shuffle: True
   name: "Segmentation_UNet"
   test_metrics: ["Dice"]
