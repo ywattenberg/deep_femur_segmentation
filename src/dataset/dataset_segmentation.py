@@ -18,9 +18,6 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
         self.with_cort_and_trab = config["use_cortical_and_trabecular"]
         self.base_path = config["base_path"]
         self.mask_path = os.path.join(self.base_path, config["mask_path"])
-        self.pcct_path = os.path.join(self.base_path, config["pcct_path"])
-        if self.pcct_path is None or not os.path.isdir(self.pcct_path):
-            raise ValueError(f"Config must contain a valid pcct_path. 'pcct_path':{self.pcct_path}")
         
         context_csv_path = os.path.join(self.base_path, config["context_csv_path"])
         self.context = pd.read_csv(context_csv_path, delimiter=";")
