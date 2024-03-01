@@ -1,0 +1,56 @@
+context_csv_path: "HRpQCT_aim\\numpy\\Cropped_regions_train_filtered.csv"
+input_size: [64,64,64]
+output_size: [128,128,128]
+use_accelerator: True
+augmentation: True
+use_cortical_and_trabecular: True
+base_path: "C:\\Users\\Yannick\\Documents\\repos\\deep_femur_segmentation\\data"
+pcct_path: "PCCT"
+mask_path: "HRpQCT_aim\\numpy"
+seed: 2001
+augmentation_params:
+  mask_threshold: 0.94
+  pcct_intensity_scale: [0, 3.5, 0, 1]
+  hrpqct_intensity_scale: [0, 4, 0, 1]
+  rotation_range: [45,45,45]
+  p_rotation: 0.8
+  min_zoom: 0.9
+  max_zoom: 1.1
+  p_zoom: 0.5
+  p_flip: 0.5
+  noise_std: 0.1
+  p_noise: 0.5
+  smooth_sigma: [0.25, 0.1]
+  p_smooth: 0.5
+  p_intensity_scale: 0.5
+  intensity_scale_factors: 0.2
+  p_intensity_shift: 0.5
+  intensity_shift_offsets: 0.1
+  p_contrast: 0.3
+  contrast_gamma: 4
+model:
+  spatial_dims: 3
+  features: [32,64,64,128,256]
+  strides: [2, 2, 2, 2, 2]
+  upsample_features: 16
+  dropout: 0.3
+  activation: "ReLU"
+  bias: True
+  norm: "BATCH"
+trainer:
+  split_test: 0.2
+  device: "cuda"
+  batch_size: 16
+  num_workers: 8
+  epochs: 10
+  shuffle: True
+  name: "Segmentation_UNet"
+  test_metrics: ["Dice"]
+  epochs_between_safe: 1
+  batches_between_safe: 200
+  split_random: False
+  tensorboard_path: "tensorboard"
+
+
+
+

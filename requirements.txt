@@ -5,6 +5,10 @@ SimpleITK
 scikit-learn
 scikit-image
 ipykernel
+monai
+pyyaml
+tqdm
+hydra-core
 #viz
 dicom2nifti
 

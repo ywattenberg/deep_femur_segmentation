@@ -1,0 +1,13 @@
+trainer:
+  split_test: 0.2
+  device: "cuda"
+  batch_size: 16
+  num_workers: 16
+  epochs: 20
+  shuffle: False
+  name: "Segmentation_UNet"
+  test_metrics: ["Dice"]
+  epochs_between_safe: 1
+  batches_between_safe: 200
+  split_random: False
+  tensorboard_path: "tensorboard"
