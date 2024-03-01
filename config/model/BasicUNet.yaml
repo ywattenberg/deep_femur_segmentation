@@ -1,0 +1,8 @@
+model:
+  spatial_dims: 3
+  features: [32,64,64,128,256]
+  strides: [2, 2, 2, 2]
+  dropout: 0.3
+  activation: "ReLU"
+  bias: True
+  norm: "BATCH"
