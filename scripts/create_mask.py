@@ -33,12 +33,12 @@ def safe_image(image, path, spacing=(1,1,1)):
 
 def main(model_path, config, output_path):
     dataset = FemurSegmentationDataset(config=config, split="test")
-    model = BasicUNetPlusPlus(
+    model = UNet(
         spatial_dims=config["model"]["spatial_dims"],
         in_channels=1,
         out_channels=2 if config["use_cortical_and_trabecular"] else 1,
-        features=config["model"]["features"],
-        #strides=config["model"]["strides"],
+        channels=config["model"]["features"],
+        strides=config["model"]["strides"],
         dropout=config["model"]["dropout"],
         norm=config["model"]["norm"],
         act=config["model"]["activation"],
