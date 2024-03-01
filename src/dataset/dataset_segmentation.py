@@ -57,10 +57,8 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
         mask = np.load(os.path.join(full_path, f"{sample_name}_threshold.npy"))
         mask = np.expand_dims(mask, 0)
         
-        sample = {"image": image, "mask": mask}
+        sample = {"image": image, "mask": mask, "pcct": pcct}
 
-        # Load PCCT image region
-        sample["pcct"] = pcct
         if self.with_cort_and_trab:
             cortical = np.load(os.path.join(full_path, f"{sample_name}_cortical.npy"))
             if cortical.shape[0] < image.shape[1]:
@@ -77,8 +75,8 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
             offset_cortical = get_padded_mask(cortical, image.shape, cortical_offset)
             offset_trabecular = get_padded_mask(trabecular, image.shape, trabecular_offset)
 
-            sample["cortical"] = offset_cortical # * offset_mask
-            sample["trabecular"] = offset_trabecular # * offset_mask
+            sample["cortical"] = offset_cortical
+            sample["trabecular"] = offset_trabecular 
         
         return sample
 
@@ -88,22 +86,11 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
         aug_dict = self._load_sample(index)
         if aug_dict is None:
             return None, None, None
-        pcct = torch.tensor(aug_dict["pcct"], dtype=torch.float32).unsqueeze(0)
-        aug_dict["pcct"] = torch.nn.functional.interpolate(pcct, aug_dict["image"].shape[1:]).squeeze(0)
-
-        # Apply transforms
-        if self.split == "test":
-            cropped_dict = aug_dict
-        else:
-            while True: 
-                cropped_dict = self.augmentation[1](aug_dict)
-                if cropped_dict["mask"].sum() > np.prod(cropped_dict["mask"].shape) * 0.1:
-                    break
-        del cropped_dict["mask"]
+            
         # print([(k, v.shape) for k,v in cropped_dict.items()])
-        aug_dict = self.augmentation[0](cropped_dict)
+        aug_dict = self.augmentation(aug_dict)
         image = aug_dict["image"]
-        pcct = torch.nn.functional.interpolate(aug_dict["pcct"].unsqueeze(0), scale_factor=0.5).squeeze(0)
+        pcct = aug_dict["pcct"]
         masks = [aug_dict["mask"]]
         if self.with_cort_and_trab:
             masks = []
@@ -112,6 +99,7 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
             masks.append(aug_dict["mask"])
         mask = torch.cat(masks, dim=0).to(torch.float32)
         mask = torch.nn.functional.interpolate(mask.unsqueeze(0), scale_factor=0.5, mode="nearest-exact").squeeze(0)
+
         return pcct, image, mask
 
         
