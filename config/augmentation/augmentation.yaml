@@ -1,0 +1,20 @@
+augmentation_params:
+  mask_threshold: 0.92
+  pcct_intensity_scale: [0, 3, -1, 1]
+  hrpqct_intensity_scale: [-1.5, 1.5, -1, 1]
+  rotation_range: [45,45,45]
+  p_rotation: 0.8
+  min_zoom: 0.9
+  max_zoom: 1.1
+  p_zoom: 0.5
+  p_flip: 0.5
+  noise_std: 0.1
+  p_noise: 0.5
+  smooth_sigma: [0.25, 0.1]
+  p_smooth: 0.5
+  p_intensity_scale: 0.5
+  intensity_scale_factors: 0.2
+  p_intensity_shift: 0.5
+  intensity_shift_offsets: 0.1
+  p_contrast: 0.3
+  contrast_gamma: 4
