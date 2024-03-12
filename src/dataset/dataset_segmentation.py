@@ -98,7 +98,6 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
             masks.append(aug_dict["trabecular"])
             masks.append(aug_dict["mask"])
         mask = torch.cat(masks, dim=0).to(torch.float32)
-        mask = torch.nn.functional.interpolate(mask.unsqueeze(0), scale_factor=0.5, mode="nearest-exact").squeeze(0)
         
         return pcct, image, mask
 

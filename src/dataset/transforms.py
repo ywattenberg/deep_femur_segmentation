@@ -174,9 +174,7 @@ def get_image_segmentation_augmentation(config, split):
 
     if split == "train":
         transforms = Compose(
-              [ 
-                  
-              ]
+            [SizedCropRandomd(keys=['image',  'mask', 'cortical', 'trabecular', 'pcct'], image_key='image',         roi_size=config["output_size"], mask_key='mask')]
               + default_transforms +
                 [
                     RandRotated(keys=['image', 'mask', 'cortical', 'trabecular', 'pcct'], range_x=rotation_range, range_y=rotation_range, range_z=rotation_range, prob=config["augmentation_params"]["p_rotation"]),
