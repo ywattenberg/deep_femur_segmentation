@@ -1,11 +1,11 @@
-context_csv_path: "numpy/Cropped_regions_train_filtered.csv"
+context_csv_path: "HRpQCT_aim\\numpy\\Cropped_regions_train_filtered.csv"
 input_size: [64,64,64]
 output_size: [128,128,128]
 use_accelerator: True
 augmentation: True
 use_cortical_and_trabecular: True
-base_path: ""
-mask_path: "numpy"
+base_path: "C:\\Users\\Yannick\\Documents\\repos\\deep_femur_segmentation\\data"
+mask_path: "HRpQCT_aim\\numpy"
 seed: 2001
 augmentation_params:
   mask_threshold: 0.94
@@ -29,7 +29,7 @@ augmentation_params:
   contrast_gamma: 4
 model:
   spatial_dims: 3
-  features: [32,64,64,128,256,256]
+  features: [16,32,64,64,128,256]
   strides: [2, 2, 2, 2]
   dropout: 0.3
   activation: "ReLU"
@@ -39,7 +39,7 @@ trainer:
   split_test: 0.2
   device: "cuda"
   batch_size: 8
-  num_workers: 14
+  num_workers: 8
   epochs: 10
   shuffle: True
   name: "Retina_Segmentation_UNet"

@@ -68,6 +68,7 @@ class SizedCropRandomd(Randomizable, Crop):
                     break
                 else:
                     center = self.get_center(img_shape)
+            
 
         for key in self.keys:
             curr_shape = data[key].shape[-3:] 

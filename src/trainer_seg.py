@@ -117,14 +117,14 @@ class Trainer:
         self.model = model.to(self.device)
         self.loss_fn = loss_fn
 
-        train_sampler = RandomSampler(train_data, replacement=True, num_samples=16)
+        # train_sampler = RandomSampler(train_data, replacement=True, num_samples=16)
         self.train_dataloader = DataLoader(train_data,
-            sampler=train_sampler, batch_size=self.batch_size, shuffle=False, num_workers=config["num_workers"], persistent_workers=True
+           batch_size=self.batch_size, shuffle=False, num_workers=config["num_workers"], persistent_workers=True, pin_memory=True
         )
-        validation_sampler = RandomSampler(val_data, replacement=True, num_samples=16)
+        # validation_sampler = RandomSampler(val_data, replacement=True, num_samples=16)
         self.val_dataloader = DataLoader(val_data,
-            sampler=validation_sampler, batch_size=self.batch_size, shuffle=False, num_workers=config["num_workers"],
-            persistent_workers=True
+            batch_size=self.batch_size, shuffle=False, num_workers=config["num_workers"],
+            persistent_workers=True, pin_memory=True
         )
         
         self.epochs_between_safe = config["epochs_between_safe"]

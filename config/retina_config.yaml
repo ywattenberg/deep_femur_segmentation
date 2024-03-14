@@ -40,11 +40,11 @@ model:
 trainer:
   split_test: 0.2
   device: "cuda"
-  batch_size: 16
+  batch_size: 32
   num_workers: 8
   epochs: 10
   shuffle: True
-  name: "Segmentation_UNet"
+  name: "retina_unet_downsample"
   test_metrics: ["Dice"]
   epochs_between_safe: 1
   batches_between_safe: 200
