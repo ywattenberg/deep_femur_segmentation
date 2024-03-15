@@ -29,8 +29,8 @@ augmentation_params:
   contrast_gamma: 4
 model:
   spatial_dims: 3
-  features: [32,64,64,128,256]
-  strides: [2, 2, 2, 2, 2]
+  features: [32,64,128,256]
+  strides: [2, 2, 2, 2]
   upsample_features: 16
   dropout: 0.3
   activation: "ReLU"
@@ -40,10 +40,10 @@ trainer:
   split_test: 0.2
   device: "cuda"
   batch_size: 16
-  num_workers: 8
-  epochs: 200
+  num_workers: 16
+  epochs: 20
   shuffle: True
-  name: "Segmentation_UNet"
+  name: "Segmentation_UNet_only_cort"
   test_metrics: ["Dice"]
   epochs_between_safe: 1
   batches_between_safe: 200

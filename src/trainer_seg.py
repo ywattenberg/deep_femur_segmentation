@@ -117,11 +117,11 @@ class Trainer:
         self.model = model.to(self.device)
         self.loss_fn = loss_fn
 
-        train_sampler = RandomSampler(train_data, replacement=True, num_samples=16)
+        train_sampler = RandomSampler(train_data, replacement=True, num_samples=32)
         self.train_dataloader = DataLoader(train_data,
             sampler=train_sampler, batch_size=self.batch_size, shuffle=False, num_workers=config["num_workers"], persistent_workers=True
         )
-        validation_sampler = RandomSampler(val_data, replacement=True, num_samples=16)
+        validation_sampler = RandomSampler(val_data, replacement=True, num_samples=8)
         self.val_dataloader = DataLoader(val_data,
             sampler=validation_sampler, batch_size=self.batch_size, shuffle=False, num_workers=config["num_workers"],
             persistent_workers=True
@@ -162,7 +162,7 @@ class Trainer:
                 pred_mask = self.model(input.to(self.device))
                 mask = mask.to(self.device)
                 # image = image.to(self.device)
-                loss = self.loss_fn(pred_mask, mask[:,:2])
+                loss = self.loss_fn(pred_mask.squeeze(), mask[:,0] * mask[:, 2])
                 loss.backward()
                 self.optimizer.step()
                 running_loss = np.append(running_loss, loss.item())
@@ -195,7 +195,7 @@ class Trainer:
                 for batch, (input, image, y) in enumerate(pbar):
                     pred = self.model(input.to(self.device))
                     y = y.to(self.device)
-                    dice_metric(pred, y[:,:2])
+                    dice_metric(pred.squeeze(), y[:,0] * y[:, 2])
                 test_loss[0] += dice_metric.aggregate().item()
                 dice_metric.reset()
                     
