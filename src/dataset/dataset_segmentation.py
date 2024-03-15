@@ -47,8 +47,7 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
         with open(os.path.join(full_path, "image_stats.yaml"), "r") as f:
             image_stats = yaml.load(f, Loader=yaml.FullLoader)
         sample_name = image_stats["name"]
-        loc = full_path[-1]
-
+    
         # Load HR-pQCT image and mask
         image = np.load(os.path.join(full_path, f"{sample_name}_image.npy"))
         image = np.expand_dims(image, 0)
@@ -94,9 +93,11 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
         aug_dict = self._load_sample(index)
         if aug_dict is None:
             return None, None, None
-            
+        
         # print([(k, v.shape) for k,v in cropped_dict.items()])
+        print(f"Augmenting {index}")
         aug_dict = self.augmentation(aug_dict)
+        print(f"Done Augmented {index}")
         image = aug_dict["image"]
         pcct = aug_dict["pcct"]
         masks = [aug_dict["mask"]]
