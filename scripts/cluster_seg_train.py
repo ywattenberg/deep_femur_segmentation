@@ -34,37 +34,27 @@ def main(config_path, epochs_between_test, base_path):
     val_config = config.copy()
     val_config["context_csv_path"] = r"numpy/Cropped_regions_val.csv"
     val_dataset = FemurSegmentationDataset(val_config, split="train")
-    # model = Retina_UNet(
-    #     in_channels=1,
-    #     out_channels_mask=2 if config["use_cortical_and_trabecular"] else 1,
-    #     out_channels_upsample=1,
-    #     config=config,
-    # )
-    model = monai_nets.UNet(
-        spatial_dims=config["model"]["spatial_dims"],
+    model = Retina_UNet(
         in_channels=1,
-        out_channels=1 if config["use_cortical_and_trabecular"] else 1,
-        channels=config["model"]["features"],
-        strides=config["model"]["strides"],
-        dropout=config["model"]["dropout"],
-        norm=config["model"]["norm"],
-        act=config["model"]["activation"],
+        out_channels_mask=2 if config["use_cortical_and_trabecular"] else 1,
+        out_channels_upsample=1,
+        config=config,
     )
+    # model = monai_nets.UNet(
+    #     spatial_dims=config["model"]["spatial_dims"],
+    #     in_channels=1,
+    #     out_channels=2 if config["use_cortical_and_trabecular"] else 1,
+    #     channels=config["model"]["features"],
+    #     strides=config["model"]["strides"],
+    #     dropout=config["model"]["dropout"],
+    #     norm=config["model"]["norm"],
+    #     act=config["model"]["activation"],
+    # )
     model = model.to("cuda")
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-8)
-    # loss_fn = DiceL1Loss(smooth_nr=0, smooth_dr=1e-5, squared_pred=True, to_onehot_y=False, sigmoid=True)
-    loss_fn = DiceLoss(smooth_nr=0, 
-        smooth_dr=1e-5, 
-        squared_pred=True, 
-        to_onehot_y=False, 
-        sigmoid=True)
+    # loss_fn = DiceLoss(smooth_nr=0, smooth_dr=1e-5, squared_pred=True, to_onehot_y=False, sigmoid=True)
+    loss_fn = DiceL1Loss(beta=0.3)
     test_dataset = FemurSegmentationDataset(config, split="test")
-    for i in range(len(test_dataset)):
-        img, hr, mask = test_dataset[i]
-        plt.imsave(f"/home/ywatte/deep_femur_segmentation/test/{i}_mask_cort.png", mask[0, 0])
-        plt.imsave(f"/home/ywatte/deep_femur_segmentation/test/{i}_mask_trab.png", mask[1, 0])
-        plt.imsave(f"/home/ywatte/deep_femur_segmentation/test/{i}_img.png", img[:, 0,:,:])
-
     trainer = Trainer(model, dataset, val_dataset, loss_fn, optimizer, config)
     trainer.train_test(epochs_between_test=epochs_between_test)
 

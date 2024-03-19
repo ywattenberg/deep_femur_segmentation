@@ -78,7 +78,7 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
 
             offset_cortical = torch.tensor(offset_cortical, dtype=torch.uint8)
             offset_trabecular = torch.tensor(offset_trabecular,  dtype=torch.uint8 )
-            offset_cortical = torch.nn.functional.interpolate(offset_trabecular.unsqueeze(0), scale_factor=0.5, mode='nearest').squeeze(0)
+            offset_cortical = torch.nn.functional.interpolate(offset_cortical.unsqueeze(0), scale_factor=0.5, mode='nearest').squeeze(0)
             offset_trabecular = torch.nn.functional.interpolate(offset_trabecular.unsqueeze(0), scale_factor=0.5, mode='nearest').squeeze(0)
 
 
@@ -95,9 +95,7 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
             return None, None, None
         
         # print([(k, v.shape) for k,v in cropped_dict.items()])
-        print(f"Augmenting {index}")
         aug_dict = self.augmentation(aug_dict)
-        print(f"Done Augmented {index}")
         image = aug_dict["image"]
         pcct = aug_dict["pcct"]
         masks = [aug_dict["mask"]]
