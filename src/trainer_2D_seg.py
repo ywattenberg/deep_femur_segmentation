@@ -159,10 +159,12 @@ class Trainer:
             pbar_dict = {}
             for batch, (input, image, mask) in enumerate(pbar):
                 self.optimizer.zero_grad()
-                pred_mask, up_image = self.model(input.to(self.device))
+                
+                pred_mask = self.model(input.to(self.device).squeeze())
+                pred_mask = pred_mask.squeeze()
                 mask = mask.to(self.device)
-                image = image.to(self.device)
-                loss = self.loss_fn(pred_mask, up_image, mask[:,:2], image)
+                # image = image.to(self.device)
+                loss = self.loss_fn(pred_mask, mask[:,:2, 1])
                 loss.backward()
                 self.optimizer.step()
                 running_loss = np.append(running_loss, loss.item())
@@ -193,9 +195,9 @@ class Trainer:
                 pbar_dict = {}
                 dice_metric = DiceMetric(include_background=False, reduction="mean")
                 for batch, (input, image, y) in enumerate(pbar):
-                    pred = self.model(input.to(self.device))
+                    pred = self.model(input.to(self.device).squeeze())
                     y = y.to(self.device)
-                    dice_metric(pred[0], y[:,:2])
+                    dice_metric(pred, y[:,:2,1])
                 test_loss[0] += dice_metric.aggregate().item()
                 dice_metric.reset()
                     

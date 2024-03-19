@@ -13,7 +13,10 @@ from monai.inferers.utils import compute_importance_map, sliding_window_inferenc
 from monai.networks.nets import UNet, BasicUNetPlusPlus
 from monai.networks import nets
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> b663a3abd4835d66e0d71ae54df887a2c564e87a
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 from src.dataset.dataset_segmentation import FemurSegmentationDataset
 from src.model.basic_UNet import BasicUNet, UpsampleUNet
@@ -26,7 +29,7 @@ def predict_index(model, dataset, index):
         predictor = SlidingWindowInfererAdapt(roi_size=[64,64,64], sw_batch_size=1, overlap=0.25, mode="gaussian", progress=True)
         pred_mask = predictor(input, model)
     # pred_mask = sliding_window_inference(input, roi_size=[64,64,64], sw_batch_size=8, predictor=model, overlap=0.25, mode="gaussian")
-    return torch.nn.functional.sigmoid(pred_mask).to('cpu').detach().squeeze().numpy()
+    return torch.nn.functional.sigmoid(pred_mask[0]).to('cpu').detach().squeeze().numpy()
 
 def safe_image(image, path, spacing=(1,1,1)):
     image = sitk.GetImageFromArray(image)
@@ -38,44 +41,23 @@ def main(model_path, config, output_path):
     # model = UNet(
     #     spatial_dims=config["model"]["spatial_dims"],
     #     in_channels=1,
-    #     out_channels=1 if config["use_cortical_and_trabecular"] else 1,
+    #     out_channels=2 if config["use_cortical_and_trabecular"] else 1,
     #     channels=config["model"]["features"],
     #     strides=config["model"]["strides"],
     #     dropout=config["model"]["dropout"],
     #     norm=config["model"]["norm"],
     #     act=config["model"]["activation"],
     # )
-    # model = nets.basic_unet.BasicUNet(
-    #     spatial_dims=config["model"]["spatial_dims"],
-    #     in_channels=1,
-    #     out_channels=2 if config["use_cortical_and_trabecular"] else 1,
-    #     features=config["model"]["features"],
-    #     dropout=config["model"]["dropout"],
-    #     norm=config["model"]["norm"],
-    #     act=config["model"]["activation"],
-    # )
-    # model = BasicUNetPlusPlus(
-    #     spatial_dims=config["model"]["spatial_dims"],
-    #     in_channels=1,
-    #     out_channels=2 if config["use_cortical_and_trabecular"] else 1,
-    #     features=config["model"]["features"],
-    #     dropout=config["model"]["dropout"],
-    #     norm=config["model"]["norm"],
-    #     act=config["model"]["activation"],
-    # )
-    model = Retina_UNet(in_channels=1, out_channels_mask=2, out_channels_upsample=1, config=config, mode='predict')
+    model = Retina_UNet(in_channels=1, out_channels_mask=2, out_channels_upsample=1, config=config)
     model.load_state_dict(torch.load(model_path))
     model.eval()
     model.to("cuda")
     for i in range(len(dataset)):
         print(f"Predicting slice {i}")
         mask = predict_index(model, dataset, i)
-        print(mask.sum())
-        mask = mask > 0.7
-        mask = mask.astype(np.uint8)
         print(mask.shape)
-        # mask[0] = mask[0] > 0.5
-        # mask[1] = mask[1] > 0.5
+        mask[0] = mask[0] > 0.7
+        mask[1] = mask[1] > 0.7
         safe_image(mask[0], os.path.join(output_path, f"pred_mask_{i}_0.nii.gz"))
         safe_image(mask[1], os.path.join(output_path, f"pred_mask_{i}_1.nii.gz"))
         input, target, mask = dataset[i]
@@ -89,10 +71,13 @@ if __name__ == "__main__":
     parser.add_argument("--model_path", type=str, required=True)
     parser.add_argument("--config_path", type=str, required=True)
     parser.add_argument("--output_path", type=str, required=True)
+    parser.add_argument("--tmp_dir", type=str)
     args = parser.parse_args()
     config = yaml.safe_load(open(args.config_path, "r"))
-    config["context_csv_path"] = r"HRpQCT_aim\\numpy\\Cropped_regions_test.csv"
-    config["model"] =  {'spatial_dims': 3, 'features': [32, 64, 64, 128, 256], 'strides': [2, 2, 2, 2, 2], 'upsample_features': 16, 'dropout': 0.3, 'activation': 'ReLU', 'bias': True, 'norm': 'BATCH'}
+    if args.tmp_dir is not None:
+        config["context_csv_path"] = f"numpy/Cropped_regions_val.csv"
+    else:
+        config["context_csv_path"] = r"HRpQCT_aim\\numpy\\Cropped_regions_val.csv"
     main(args.model_path, config, args.output_path)
     
 

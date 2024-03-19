@@ -44,6 +44,6 @@ rsync -ah --stats /data/$USER/numpy $TMPDIR
 export TQDM_DISABLE="1"
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
-/home/$USER/deep_femur_segmentation/.venv/bin/python3 /home/$USER/deep_femur_segmentation/scripts/cluster_seg_train.py --config /home/$USER/deep_femur_segmentation/config/cluster_segmentation_config.yaml --tmp_dir $TMPDIR
+/home/$USER/deep_femur_segmentation/.venv/bin/python3 /home/$USER/deep_femur_segmentation/scripts/visulizations/create_mask.py --config_path /home/$USER/deep_femur_segmentation/config/cluster_segmentation_config.yaml --tmp_dir $TMPDIR --output_path /home/$USER/deep_femur_segmentation/test_retian --model_path /home/$USER/deep_femur_segmentation/models/model_weights_Retina_UNet_no_thresh.pth
 
 exit 0

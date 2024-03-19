@@ -95,9 +95,7 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
             return None, None, None
         
         # print([(k, v.shape) for k,v in cropped_dict.items()])
-        print(f"Augmenting {index}")
         aug_dict = self.augmentation(aug_dict)
-        print(f"Done Augmented {index}")
         image = aug_dict["image"]
         pcct = aug_dict["pcct"]
         masks = [aug_dict["mask"]]
