@@ -6,7 +6,7 @@ from torch import nn
 
 
 class Retina_UNet(unet.UNet):
-    def __init__(self, in_channels, out_channels_mask, out_channels_upsample, config) -> None:
+    def __init__(self, in_channels, out_channels_mask, out_channels_upsample, config, mode='train') -> None:
         self._config = config
         if "model" in config:
             self._config = config["model"]
@@ -20,6 +20,7 @@ class Retina_UNet(unet.UNet):
             norm=self._config["norm"],
             act=self._config["activation"],
         )
+        self.mode = mode
 
         def _create_block(
             inc: int, outc: int, channels, strides, is_top: bool
@@ -64,5 +65,7 @@ class Retina_UNet(unet.UNet):
     def forward(self, input):
         x = self.model(input)
         mask = self.mask_head(x)
+        if self.mode == "predict":
+            return mask
         upsample_image = self.upsample_head(x)
         return [mask, upsample_image]

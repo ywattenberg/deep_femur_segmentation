@@ -43,8 +43,9 @@ def main(fixed_image: sitk.Image | str , moving_image: sitk.Image | str, calcula
     voxel_size = fixed_image.GetSpacing()
     for i in range(3):
         translation = base_translation.copy()
-        translation[i] = voxel_size[i]
+        translation[i] = 1
         translation_transform = sitk.TranslationTransform(3, translation)
+        print(translation_transform)
         moving_image_transformed = sitk.Resample(moving_image, fixed_image, translation_transform, sitk.sitkLinear, 0.0, moving_image.GetPixelID())
         scores.append(registration_score(fixed_image, moving_image_transformed, score_function=score_function))
         

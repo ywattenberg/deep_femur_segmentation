@@ -78,7 +78,7 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
 
             offset_cortical = torch.tensor(offset_cortical, dtype=torch.uint8)
             offset_trabecular = torch.tensor(offset_trabecular,  dtype=torch.uint8 )
-            offset_cortical = torch.nn.functional.interpolate(offset_trabecular.unsqueeze(0), scale_factor=0.5, mode='nearest').squeeze(0)
+            offset_cortical = torch.nn.functional.interpolate(offset_cortical.unsqueeze(0), scale_factor=0.5, mode='nearest').squeeze(0)
             offset_trabecular = torch.nn.functional.interpolate(offset_trabecular.unsqueeze(0), scale_factor=0.5, mode='nearest').squeeze(0)
 
 
