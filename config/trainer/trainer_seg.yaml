@@ -11,3 +11,4 @@ trainer:
   batches_between_safe: 200
   split_random: False
   tensorboard_path: "tensorboard"
+  model_path: "model"

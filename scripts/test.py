@@ -18,6 +18,7 @@ from src.model.retina_UNet import Retina_UNet
 from src.utils.dtypes import TORCH_DTYPES, NUMPY_DTYPES
 
 
+
 def main():
 
     # Get Unet model from Monai

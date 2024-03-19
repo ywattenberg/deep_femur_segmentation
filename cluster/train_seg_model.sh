@@ -41,9 +41,8 @@ echo "GPU:                  ${CUDA_VISIBLE_DEVICES}"
 
 rsync -ah --stats /data/$USER/numpy $TMPDIR
 
-export TQDM_DISABLE="1"
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
-/home/$USER/deep_femur_segmentation/.venv/bin/python3 /home/$USER/deep_femur_segmentation/scripts/cluster_seg_train.py --config /home/$USER/deep_femur_segmentation/config/cluster_segmentation_config.yaml --tmp_dir $TMPDIR
+
+/home/$USER/deep_femur_segmentation/.venv/bin/python3 /home/$USER/deep_femur_segmentation/scripts/cluster_seg_train.py --config /home/$USER/deep_femur_segmentation/config/segmentation_config.yaml --tmp_dir $TMPDIR
 
 exit 0

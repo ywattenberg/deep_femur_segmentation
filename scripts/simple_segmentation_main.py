@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import sys
 import os
+import hydra
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from src.trainer_seg import Trainer
@@ -16,6 +17,7 @@ from src.loss.DiceL1Loss import DiceL1Loss
 
 torch.set_default_dtype(torch.float32)
 
+# @hydra.main(config_path="config", config_name="segmentation_config")
 def main():
     config = yaml.safe_load(open("config/segmentation_config.yaml", "r"))
     # config["context_csv_path"] = r"HRpQCT_aim\\Cropped_regions.csv"

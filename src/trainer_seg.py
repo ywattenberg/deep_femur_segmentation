@@ -116,6 +116,7 @@ class Trainer:
         self.num_epochs = config["epochs"]
         self.model = model.to(self.device)
         self.loss_fn = loss_fn
+        self.model_path = config["model_path"]
 
         train_sampler = RandomSampler(train_data, replacement=True, num_samples=32)
         self.train_dataloader = DataLoader(train_data,
@@ -180,7 +181,7 @@ class Trainer:
                     and batch > self.batches_between_safe - 1
                 ):
                     print("saving model...")
-                    torch.save(self.model.state_dict(), f"/home/ywatte/deep_femur_segmentation/models/tmp_model_weights.pth")
+                    torch.save(self.model.state_dict(), os.path.join(self.model_path, "tmp_model_weights.pth"))
             return running_loss
 
     def test_loop(self, epoch=0):
@@ -235,10 +236,11 @@ class Trainer:
                     ]
                 )
                 self.qualitative_eval(t)
+                torch.nn.functional.interpolate()
             print("Done!")
             if t % self.epochs_between_safe == 0:
                 torch.save(
-                    self.model.state_dict(), f"/home/ywatte/deep_femur_segmentation/models/model_weights_{self.name}.pth"
+                    self.model.state_dict(), os.path.join(self.model_path, f"model_weights_{self.name}.pth")
                 )
             # torch.save(self.model, f'models/entire_model_{self.name}.pth')
         except KeyboardInterrupt:
@@ -246,13 +248,13 @@ class Trainer:
             safe = input("Safe model [y]es/[n]o: ")
             if safe == "y" or safe == "Y":
                 torch.save(
-                    self.model.state_dict(), f"/home/ywatte/deep_femur_segmentation/models/model_weights_{self.name}.pth"
+                    self.model.state_dict(), os.path.join(self.model_path, f"model_weights_{self.name}.pth")
                 )
                 # torch.save(self.model, f'models/entire_model_{self.name}.pth')
             else:
                 print("Not saving...")
 
-        torch.save(self.model.state_dict(), f"/home/ywatte/deep_femur_segmentation/models/model_weights_{self.name}.pth")
+        torch.save(self.model.state_dict(), os.path.join(self.model_path, f"model_weights_{self.name}.pth"))
         return self.test_scores
         # torch.save(self.model, f'models/entire_model_{self.name}.pth')
 

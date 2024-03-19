@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import vtk
 
 
 def get_inital_crop_size(size):
@@ -77,6 +78,5 @@ def maximum_overlapping_rectangle(rect1, rect2):
     y_overlap = max(0, min(y+h, y2+h2) - max(y, y2))
     intersection = [(max(x,x2), x_overlap),(max(y,y2), y_overlap)]
     return intersection
-
 
 
