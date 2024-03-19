@@ -1,6 +1,6 @@
 context_csv_path: "numpy/Cropped_regions_train_filtered.csv"
-input_size: [64,64,64]
-output_size: [128,128,128]
+input_size: [3,256,256]
+output_size: [6,512,512]
 use_accelerator: True
 augmentation: True
 use_cortical_and_trabecular: True
@@ -8,7 +8,6 @@ base_path: ""
 mask_path: "numpy"
 seed: 2001
 augmentation_params:
-  mask_threshold: 0.92
   pcct_intensity_scale: [0, 3, -1, 1]
   hrpqct_intensity_scale: [-1.5, 1.5, -1, 1]
   rotation_range: [45,45,45]
@@ -28,7 +27,7 @@ augmentation_params:
   p_contrast: 0.3
   contrast_gamma: 4
 model:
-  spatial_dims: 3
+  spatial_dims: 2
   features: [32,64,128,256]
   strides: [2, 2, 2, 2]
   upsample_features: 16
@@ -43,7 +42,7 @@ trainer:
   num_workers: 16
   epochs: 20
   shuffle: True
-  name: "Retina_UNet_no_thresh"
+  name: "2D_UNet"
   test_metrics: ["Dice"]
   epochs_between_safe: 1
   batches_between_safe: 200
