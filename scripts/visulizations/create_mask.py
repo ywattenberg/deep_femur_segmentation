@@ -13,10 +13,6 @@ from monai.inferers.utils import compute_importance_map, sliding_window_inferenc
 from monai.networks.nets import UNet, BasicUNetPlusPlus
 from monai.networks import nets
 
-<<<<<<< HEAD
-
-=======
->>>>>>> b663a3abd4835d66e0d71ae54df887a2c564e87a
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 from src.dataset.dataset_segmentation import FemurSegmentationDataset
 from src.model.basic_UNet import BasicUNet, UpsampleUNet
