@@ -169,3 +169,5 @@ elastix
 tensorboard
 
 models/
+
+logs/

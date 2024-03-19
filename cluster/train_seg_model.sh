@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --mail-type=NONE
 #SBATCH --job-name=ModelTraining
-#SBATCH --time=04:00:00
+#SBATCH --time=08:00:00
 #SBATCH --output=/home/%u/deep_femur_segmentation/logs/%j.out
 #SBATCH --error=/home/%u/deep_femur_segmentation/logs/%j.err
 #SBATCH --cpus-per-task=16
@@ -12,7 +12,7 @@
 # Exit on errors
 set -o errexit
 
-module load gpu python/3.11 cuda/12.3.0 cudnn/8.9.5.30-12.2
+module load gpu python/3.11 cuda/12.3.0
 
 
 # Set a directory for temporary files unique to the job with automatic removal at job termination
@@ -41,6 +41,9 @@ echo "GPU:                  ${CUDA_VISIBLE_DEVICES}"
 
 rsync -ah --stats /data/$USER/numpy $TMPDIR
 
-/home/$USER/deep_femur_segmentation/.venv/bin/python3 /home/$USER/deep_femur_segmentation/scripts/cluster_seg_train.py --config /home/$USER/deep_femur_segmentation/config/segmentation_config.yaml --tmp_dir $TMPDIR
+export TQDM_DISABLE="1"
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+/home/$USER/deep_femur_segmentation/.venv/bin/python3 /home/$USER/deep_femur_segmentation/scripts/cluster_seg_train.py --config /home/$USER/deep_femur_segmentation/config/cluster_segmentation_config.yaml --tmp_dir $TMPDIR
 
 exit 0

@@ -117,14 +117,14 @@ class Trainer:
         self.model = model.to(self.device)
         self.loss_fn = loss_fn
 
-        train_sampler = RandomSampler(train_data, replacement=True, num_samples=16)
+        train_sampler = RandomSampler(train_data, replacement=True, num_samples=32)
         self.train_dataloader = DataLoader(train_data,
-            sampler=train_sampler, batch_size=self.batch_size, shuffle=False, num_workers=config["num_workers"], persistent_workers=True
+           batch_size=self.batch_size, shuffle=False, num_workers=config["num_workers"], persistent_workers=True, pin_memory=True
         )
-        validation_sampler = RandomSampler(val_data, replacement=True, num_samples=16)
+        validation_sampler = RandomSampler(val_data, replacement=True, num_samples=8)
         self.val_dataloader = DataLoader(val_data,
-            sampler=validation_sampler, batch_size=self.batch_size, shuffle=False, num_workers=config["num_workers"],
-            persistent_workers=True
+            batch_size=self.batch_size, shuffle=False, num_workers=config["num_workers"],
+            persistent_workers=True, pin_memory=True
         )
         
         self.epochs_between_safe = config["epochs_between_safe"]
@@ -157,11 +157,12 @@ class Trainer:
         
         with tqdm(self.train_dataloader, desc=f"Epoch {epoch+1}") as pbar:
             pbar_dict = {}
-            for batch, (input, _, mask) in enumerate(pbar):
+            for batch, (input, image, mask) in enumerate(pbar):
                 self.optimizer.zero_grad()
-                pred = self.model(input.to(self.device))
+                pred_mask, up_image = self.model(input.to(self.device))
                 mask = mask.to(self.device)
-                loss = self.loss_fn(pred, mask[:,:2])
+                image = image.to(self.device)
+                loss = self.loss_fn(pred_mask, up_image, mask[:,:2], image)
                 loss.backward()
                 self.optimizer.step()
                 running_loss = np.append(running_loss, loss.item())
@@ -179,7 +180,7 @@ class Trainer:
                     and batch > self.batches_between_safe - 1
                 ):
                     print("saving model...")
-                    torch.save(self.model.state_dict(), f"models/tmp_model_weights.pth")
+                    torch.save(self.model.state_dict(), f"/home/ywatte/deep_femur_segmentation/models/tmp_model_weights.pth")
             return running_loss
 
     def test_loop(self, epoch=0):
@@ -191,10 +192,10 @@ class Trainer:
             with tqdm(self.val_dataloader, desc="Test") as pbar:
                 pbar_dict = {}
                 dice_metric = DiceMetric(include_background=False, reduction="mean")
-                for batch, (input, _, y) in enumerate(pbar):
+                for batch, (input, image, y) in enumerate(pbar):
                     pred = self.model(input.to(self.device))
                     y = y.to(self.device)
-                    dice_metric(pred, y[:,:2])
+                    dice_metric(pred[0], y[:,:2])
                 test_loss[0] += dice_metric.aggregate().item()
                 dice_metric.reset()
                     
@@ -225,7 +226,7 @@ class Trainer:
                     print("Saving model")
                     torch.save(
                         self.model.state_dict(),
-                        f"models/{self.name}_epoch_{t+1}.pth",
+                        f"/home/ywatte/deep_femur_segmentation/models/{self.name}_epoch_{t+1}.pth",
                     )
                 self.test_scores = pd.concat(
                     [
@@ -237,7 +238,7 @@ class Trainer:
             print("Done!")
             if t % self.epochs_between_safe == 0:
                 torch.save(
-                    self.model.state_dict(), f"models/model_weights_{self.name}.pth"
+                    self.model.state_dict(), f"/home/ywatte/deep_femur_segmentation/models/model_weights_{self.name}.pth"
                 )
             # torch.save(self.model, f'models/entire_model_{self.name}.pth')
         except KeyboardInterrupt:
@@ -245,13 +246,13 @@ class Trainer:
             safe = input("Safe model [y]es/[n]o: ")
             if safe == "y" or safe == "Y":
                 torch.save(
-                    self.model.state_dict(), f"models/model_weights_{self.name}.pth"
+                    self.model.state_dict(), f"/home/ywatte/deep_femur_segmentation/models/model_weights_{self.name}.pth"
                 )
                 # torch.save(self.model, f'models/entire_model_{self.name}.pth')
             else:
                 print("Not saving...")
 
-        torch.save(self.model.state_dict(), f"models/model_weights_{self.name}.pth")
+        torch.save(self.model.state_dict(), f"/home/ywatte/deep_femur_segmentation/models/model_weights_{self.name}.pth")
         return self.test_scores
         # torch.save(self.model, f'models/entire_model_{self.name}.pth')
 

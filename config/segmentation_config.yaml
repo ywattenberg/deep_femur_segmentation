@@ -5,7 +5,6 @@ use_accelerator: True
 augmentation: True
 use_cortical_and_trabecular: True
 base_path: "C:\\Users\\Yannick\\Documents\\repos\\deep_femur_segmentation\\data"
-pcct_path: "PCCT"
 mask_path: "HRpQCT_aim\\numpy"
 seed: 2001
 augmentation_params:
@@ -30,7 +29,7 @@ augmentation_params:
   contrast_gamma: 4
 model:
   spatial_dims: 3
-  features: [32,64,64,128,256]
+  features: [16,32,64,64,128,256]
   strides: [2, 2, 2, 2]
   dropout: 0.3
   activation: "ReLU"
@@ -39,16 +38,16 @@ model:
 trainer:
   split_test: 0.2
   device: "cuda"
-  batch_size: 16
+  batch_size: 8
   num_workers: 8
   epochs: 10
   shuffle: True
-  name: "Segmentation_UNet"
+  name: "Retina_Segmentation_UNet"
   test_metrics: ["Dice"]
   epochs_between_safe: 1
   batches_between_safe: 200
   split_random: False
-  tensorboard_path: "tensorboard"
+  tensorboard_path: "/home/ywatte/deep_femur_segmentation/tensorboard"
 
 
 

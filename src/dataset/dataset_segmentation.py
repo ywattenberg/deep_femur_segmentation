@@ -47,8 +47,7 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
         with open(os.path.join(full_path, "image_stats.yaml"), "r") as f:
             image_stats = yaml.load(f, Loader=yaml.FullLoader)
         sample_name = image_stats["name"]
-        loc = full_path[-1]
-
+    
         # Load HR-pQCT image and mask
         image = np.load(os.path.join(full_path, f"{sample_name}_image.npy"))
         image = np.expand_dims(image, 0)
@@ -56,11 +55,11 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
         pcct = np.expand_dims(pcct, 0)
         mask = np.load(os.path.join(full_path, f"{sample_name}_threshold.npy"))
         mask = np.expand_dims(mask, 0)
+        mask = torch.tensor(mask,  dtype=torch.uint8)
+        mask = torch.nn.functional.interpolate(mask.unsqueeze(0), scale_factor=0.5, mode='nearest').squeeze(0)
         
-        sample = {"image": image, "mask": mask}
+        sample = {"image": image, "mask": mask, "pcct": pcct}
 
-        # Load PCCT image region
-        sample["pcct"] = pcct
         if self.with_cort_and_trab:
             cortical = np.load(os.path.join(full_path, f"{sample_name}_cortical.npy"))
             if cortical.shape[0] < image.shape[1]:
@@ -77,8 +76,14 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
             offset_cortical = get_padded_mask(cortical, image.shape, cortical_offset)
             offset_trabecular = get_padded_mask(trabecular, image.shape, trabecular_offset)
 
-            sample["cortical"] = offset_cortical # * offset_mask
-            sample["trabecular"] = offset_trabecular # * offset_mask
+            offset_cortical = torch.tensor(offset_cortical, dtype=torch.uint8)
+            offset_trabecular = torch.tensor(offset_trabecular,  dtype=torch.uint8 )
+            offset_cortical = torch.nn.functional.interpolate(offset_cortical.unsqueeze(0), scale_factor=0.5, mode='nearest').squeeze(0)
+            offset_trabecular = torch.nn.functional.interpolate(offset_trabecular.unsqueeze(0), scale_factor=0.5, mode='nearest').squeeze(0)
+
+
+            sample["cortical"] = offset_cortical
+            sample["trabecular"] = offset_trabecular 
         
         return sample
 
@@ -88,30 +93,21 @@ class FemurSegmentationDataset(torch.utils.data.Dataset):
         aug_dict = self._load_sample(index)
         if aug_dict is None:
             return None, None, None
-        pcct = torch.tensor(aug_dict["pcct"], dtype=torch.float32).unsqueeze(0)
-        aug_dict["pcct"] = torch.nn.functional.interpolate(pcct, aug_dict["image"].shape[1:]).squeeze(0)
-
-        # Apply transforms
-        if self.split == "test":
-            cropped_dict = aug_dict
-        else:
-            while True: 
-                cropped_dict = self.augmentation[1](aug_dict)
-                if cropped_dict["mask"].sum() > np.prod(cropped_dict["mask"].shape) * 0.1:
-                    break
-        del cropped_dict["mask"]
+        
         # print([(k, v.shape) for k,v in cropped_dict.items()])
-        aug_dict = self.augmentation[0](cropped_dict)
+        aug_dict = self.augmentation(aug_dict)
         image = aug_dict["image"]
-        pcct = torch.nn.functional.interpolate(aug_dict["pcct"].unsqueeze(0), scale_factor=0.5).squeeze(0)
+        pcct = aug_dict["pcct"]
         masks = [aug_dict["mask"]]
         if self.with_cort_and_trab:
             masks = []
-            masks.append(aug_dict["cortical"] * aug_dict["mask"] )
-            masks.append(aug_dict["trabecular"] * aug_dict["mask"])
+            masks.append(aug_dict["cortical"] )
+            masks.append(aug_dict["trabecular"])
             masks.append(aug_dict["mask"])
         mask = torch.cat(masks, dim=0).to(torch.float32)
-        mask = torch.nn.functional.interpolate(mask.unsqueeze(0), scale_factor=0.5, mode="nearest-exact").squeeze(0)
+        # print(f"Mask {mask.shape}")
+        # print(f"PCCT shape {pcct.shape}")
+        # print(f"image shape {image.shape}")
         return pcct, image, mask
 
         

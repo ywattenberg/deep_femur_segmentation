@@ -112,7 +112,6 @@ class UpsampleUNet_new(unet.UNet):
         self._config = config
         if "model" in config:
             self._config = config["model"]
-        super
         super().__init__(
             spatial_dims=self._config["spatial_dims"],
             in_channels=in_channels,
