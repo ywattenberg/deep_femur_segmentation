@@ -11,7 +11,7 @@ tqdm
 hydra-core
 #viz
 dicom2nifti
-
+vtk
 #pytorch
 torch
 torchvision
