@@ -1,5 +1,16 @@
 # DeepFemurSegmentation
-
+### Abstract
+In this work, we seek to validate and segment femur images obtained from the
+Photon-counting computed tomography (PCCT) scanner. Using the established
+high-resolution peripheral quantitative computed tomography (HR-pQCT) im-
+ages as a ground truth. We use a U-Net architecture to segment the trabecular
+and cortical bone compartments. Further, introduce an auxiliary task to the U-
+Net architecture, to predict the HR-pQCT images from the PCCT images. We
+find that the U-Net architecture can segment the trabecular and cortical bone
+with a high accuracy. Our findings indicate that the auxiliary task does not im-
+prove the segmentation of the trabecular and cortical bone. We conclude that the
+PCCT images can be used to extract valid cortical and trabecular bone regions
+in an automated fashion
 ## Usage
 
 ### Installation
