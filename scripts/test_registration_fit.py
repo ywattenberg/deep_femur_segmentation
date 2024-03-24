@@ -11,7 +11,7 @@ from src.registration.registration_score import registration_score
 from src.preprocessing.preprocessing import intensity_normalization
 
 
-def main(fixed_image: sitk.Image | str , moving_image: sitk.Image | str, calculate_normalized_mutual_information: bool = False):
+def main(fixed_image: sitk.Image | str , moving_image: sitk.Image | str, calculate_normalized_mutual_information: bool = True):
     """
     Calculate a very simple registration score of two images by moving the moving image in all directions by `voxel_size` and calculating the normalized mutual information score.
     :param fixed_image: The fixed image.
@@ -43,16 +43,16 @@ def main(fixed_image: sitk.Image | str , moving_image: sitk.Image | str, calcula
     voxel_size = fixed_image.GetSpacing()
     for i in range(3):
         translation = base_translation.copy()
-        translation[i] = 1
+        translation[i] = 2
         translation_transform = sitk.TranslationTransform(3, translation)
         print(translation_transform)
         moving_image_transformed = sitk.Resample(moving_image, fixed_image, translation_transform, sitk.sitkLinear, 0.0, moving_image.GetPixelID())
-        scores.append(registration_score(fixed_image, moving_image_transformed, score_function=score_function))
+        scores.append(registration_score(fixed_image[:,:,:100], moving_image_transformed[:,:,:100], score_function=score_function))
         
         translation[i] = -voxel_size[i]
         translation_transform = sitk.TranslationTransform(3, translation)
         moving_image_transformed = sitk.Resample(moving_image, fixed_image, translation_transform, sitk.sitkLinear, 0.0, moving_image.GetPixelID())
-        scores.append(registration_score(fixed_image, moving_image_transformed, score_function=score_function))
+        scores.append(registration_score(fixed_image[:,:,:100], moving_image_transformed[:,:,:100], score_function=score_function))
 
     print(f"Registration normalized mutual information score of original images: {base_score}")
     print(f"Registration normalized mutual information score of images moved by one voxel in each direction min: {min(scores)}, max: {max(scores)}")

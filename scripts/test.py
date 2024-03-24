@@ -28,11 +28,21 @@ def main():
     print(CONFIG)
     d_type = TORCH_DTYPES[CONFIG["dtype"]]
     torch.set_default_dtype(d_type)
+    config = CONFIG
     # dataset = FemurImageDataset(config=CONFIG, split="train")
     # val_conf = CONFIG.copy()
     # val_conf["context_csv_path"] = "data/validation.csv"
     # val_dataset = FemurImageDataset(config=val_conf, split="val")
-    model = Retina_UNet(1,out_channels_mask=2, out_channels_upsample=1, config=CONFIG)
+    model = monai_nets.UNet(
+        spatial_dims=config["model"]["spatial_dims"],
+        in_channels=1,
+        out_channels=2 if config["use_cortical_and_trabecular"] else 1,
+        channels=config["model"]["features"],
+        strides=config["model"]["strides"],
+        dropout=config["model"]["dropout"],
+        norm=config["model"]["norm"],
+        act=config["model"]["activation"],
+    )
     out = model(torch.rand(1,1,64,64,64))
     print(out[0].shape)
     print(out[1].shape)
