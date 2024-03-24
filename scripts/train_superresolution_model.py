@@ -9,7 +9,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from src.trainer import Trainer
+from src.trainer.trainer import Trainer
 from src.dataset.dataset import FemurImageDataset 
 from src.dataset.transforms import SizedCropRandomd
 from src.model.basic_UNet import BasicUNet, UpsampleUNet, UpsampleUNet_new
@@ -29,10 +29,10 @@ def main():
     d_type = TORCH_DTYPES[CONFIG["dtype"]]
     torch.set_default_dtype(d_type)
     config = CONFIG
-    # dataset = FemurImageDataset(config=CONFIG, split="train")
-    # val_conf = CONFIG.copy()
-    # val_conf["context_csv_path"] = "data/validation.csv"
-    # val_dataset = FemurImageDataset(config=val_conf, split="val")
+    dataset = FemurImageDataset(config=CONFIG, split="train")
+    val_conf = CONFIG.copy()
+    val_conf["context_csv_path"] = "data/validation.csv"
+    val_dataset = FemurImageDataset(config=val_conf, split="val")
     model = monai_nets.UNet(
         spatial_dims=config["model"]["spatial_dims"],
         in_channels=1,
@@ -43,17 +43,13 @@ def main():
         norm=config["model"]["norm"],
         act=config["model"]["activation"],
     )
-    out = model(torch.rand(1,1,64,64,64))
-    print(out[0].shape)
-    print(out[1].shape)
-
 
     # Load model
     # model.load_state_dict(torch.load("models/BasicUNet_epoch_5.pth"))
-    # optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-8)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-8)
 
-    # trainer = Trainer(model, dataset, val_dataset, torch.nn.L1Loss(), optimizer, CONFIG, test_data=val_dataset)
-    # trainer.train_test()
+    trainer = Trainer(model, dataset, val_dataset, torch.nn.L1Loss(), optimizer, CONFIG, test_data=val_dataset)
+    trainer.train_test()
     
         
    
