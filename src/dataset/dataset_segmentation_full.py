@@ -14,7 +14,7 @@ from .utils import get_inital_crop_size
 
 from ..utils.dtypes import TORCH_DTYPES, NUMPY_DTYPES
 
-class FemurImageDataset(Dataset):
+class FemurImageSegmentationDataset(Dataset):
     """Femur Image Dataset"""
 
     def __init__(self, config, split) -> None:
@@ -72,7 +72,7 @@ class FemurImageDataset(Dataset):
             name = os.path.basename(HRpQCT_folder)
             
             # get folder with npy files
-            HRpQCT_f = os.path.join(HRpQCT_folder, f"{name}")
+            HRpQCT_f = os.path.join(HRpQCT_folder, f"mask")
             PCCT_f = os.path.join(PCCT_folder, f"{name}")
 
             files_in_folder = len(os.listdir(HRpQCT_f))
@@ -93,7 +93,7 @@ class FemurImageDataset(Dataset):
     def _load_range_from_folder(self, PCCT_folder, HRpQCT_folder, start, end):
         
         PCCT_images = []
-        HRpQCT_images = []
+        Mask = []
         num_slices_in_folder = self.slice_from_range[PCCT_folder][1] - self.slice_from_range[PCCT_folder][0]
         
         assert start >= 0, "Start index must be greater than 0."
@@ -117,18 +117,18 @@ class FemurImageDataset(Dataset):
 
         for i in range(start, end):
             PCCT_images.append(np.load(os.path.join(PCCT_folder, f"{i}.npy")).astype(self.np_dtype))
-        for i in range(int(start*self._scale_factor[0]), int(end*self._scale_factor[0])):
-            HRpQCT_images.append(np.load(os.path.join(HRpQCT_folder, f"{i}.npy")).astype(self.np_dtype))
+        for i in range(int(start), int(end)):
+            Mask.append(np.load(os.path.join(HRpQCT_folder, f"{i}.npy")).astype(self.np_dtype))
         # print(f"Slices {start} to {end} loaded from {PCCT_folder} and {int(start*self._scale_factor[0])} to {int(end*self._scale_factor[0])} from  {HRpQCT_folder}")
         
         missing_pcct = self._input_size[0] - len(PCCT_images)
-        missing_hrpqct = self._output_size[0] - len(HRpQCT_images)
+        missing_hrpqct = self._output_size[0] - len(Mask)
         assert missing_pcct <= 0, "Missing PCCT images must be greater than 0."
         assert missing_hrpqct <= 0, "Missing HRpQCT images must be greater than 0."
         PCCT_images = PCCT_images + [np.zeros_like(PCCT_images[0]) for _ in range(missing_pcct)]
-        HRpQCT_images =  HRpQCT_images + [np.zeros_like(HRpQCT_images[0]) for _ in range(missing_hrpqct)]
+        Mask =  Mask + [np.zeros_like(Mask[0]) for _ in range(missing_hrpqct)]
 
-        return PCCT_images, HRpQCT_images
+        return PCCT_images, Mask
     
     
     def __getitem__(self, index):
