@@ -10,6 +10,7 @@ import vtk
 import numpy as np
 from skimage.morphology import binary_dilation, binary_erosion
 from skimage.measure import label as sklabel
+from skimage.measure import regionprops
 from skimage.filters import gaussian, median
 import os
 
@@ -133,8 +134,9 @@ def keep_largest_connected_component_skimage(mask, background=False):
 
     mask = np.logical_not(mask) if background else mask
 
-    mask = sklabel(mask, background=0)
-    mask = mask == np.argmax(np.bincount(mask.flat)[1:]) + 1
+    mask, num = sklabel(mask, background=0, return_num=True)
+    if num > 1:
+        mask = mask == np.argmax(np.bincount(mask.flat)[1:]) + 1
 
     mask = np.logical_not(mask) if background else mask
 
@@ -301,3 +303,110 @@ def postprocess_masks_iterative(
         debug_mask_plot(cort_mask, '6. Cort mask, extracted', filename='postproc6_cort_extracted.png')
 
     return cort_mask, trab_mask
+
+def remove_small_components(mask, min_size):
+    labels = sklabel(mask, return_num=False)
+    for region in regionprops(labels):
+        if region.area < min_size:
+            mask[labels == region.label] = 0
+    
+    return mask
+
+
+def keep_largest_connected_component_slice(mask, dim=2, background=False, erosion_dilation=0):
+    for i in range(erosion_dilation):
+        mask = binary_erosion(mask)
+    
+    mask = np.swapaxes(mask, 0, dim)
+    for i in range(mask.shape[0]):
+        mask[i] = keep_largest_connected_component_skimage(mask[i], background=background)
+    mask = np.swapaxes(mask, 0, dim)
+
+    for i in range(erosion_dilation):
+        mask = binary_dilation(mask)
+    return mask
+
+def dialate_subtract_filter(mask, sub_mask, iterations):
+    for i in range(iterations):
+        mask = binary_dilation(mask)
+        mask = np.logical_and(mask, np.logical_not(sub_mask))
+        mask = keep_largest_connected_component_skimage(mask, background=False)
+
+    for i in range(iterations):
+        mask = binary_erosion(mask)
+    return mask
+
+
+def post_processing_retina(        
+        image,
+        cort_mask,
+        trab_mask,
+        n_islands=10,
+        n_gaps=25,
+        min_cort_thickness=8,
+        morph_bone_threshold=0,
+        visualize=False):
+    
+    trab_mask = trab_mask > 0.5
+    cort_mask = cort_mask > 0.5
+    
+    if visualize:
+        debug_mask_plot(trab_mask, '00a. Trabecular mask, input', filename='postproc00a_trab_initial.png')
+        debug_mask_plot(cort_mask, '00b. Cortical mask, input', filename='postproc00b_cort_initial.png')
+
+    # Generate trabecluar mask
+    trab_mask = fill_in_gaps_in_mask(trab_mask, dilation_erosion=10)
+    if visualize:
+        debug_mask_plot(trab_mask, '00c. Trabecular mask, filled', filename='postproc00c_trab_filled.png')
+    
+    cort_mask = remove_small_components(cort_mask, 400)
+    if visualize:
+        debug_mask_plot(cort_mask, '00d. Cortical mask, filtered', filename='postproc00d_cort_filtered.png')
+
+    # Step 1: Generate bone mask by filling the cortical mask
+
+    bone_mask = fill_in_gaps_in_mask(cort_mask, dilation_erosion=10)
+    bone_mask = remove_small_components(bone_mask, 400)
+    bone_mask = fill_in_gaps_in_mask(bone_mask, dilation_erosion=10)
+    if visualize:
+        debug_mask_plot(bone_mask, '01. Bone mask, filled', filename='postproc01_bone_filled.png')
+    # Step 2: Filter any trabecular mask outside the bone mask
+        
+
+    min_cort = erode_and_subtract(bone_mask, 2)
+    trab_mask[min_cort > 0] = 0
+    trab_mask = remove_islands_from_mask(trab_mask, erosion_dilation=50)
+    if visualize:
+        debug_mask_plot(trab_mask, '02. Trabecular mask, filtered', filename='postproc02_trab_zeroed.png')
+
+    cort_mask = np.bitwise_or(cort_mask, min_cort)
+    trab_mask = remove_islands_from_mask(trab_mask, erosion_dilation=20)
+    trab_mask = keep_largest_connected_component_slice(trab_mask, erosion_dilation=20)
+    if visualize:
+        debug_mask_plot(trab_mask, '02. Trabecular mask, filtered', filename='postproc03_trab_filtered.png')
+
+
+    trab_mask = fill_in_gaps_in_mask(trab_mask, dilation_erosion=5)
+    if visualize:
+        debug_mask_plot(trab_mask, '04. Trabecular mask, filtered', filename='postproc03_trab_filtered.png')
+    
+    trab_mask = dialate_subtract_filter(trab_mask, bone_mask, 8)
+    trab_mask = remove_islands_from_mask(trab_mask, erosion_dilation=20)
+    cort_mask = np.logical_and(cort_mask, np.logical_not(trab_mask))
+    if visualize:
+        debug_mask_plot(cort_mask, '05. Cortical mask, filtered', filename='postproc04_cort_filtered.png')
+    cort_mask = binary_close(cort_mask, 10)
+    if visualize:
+        debug_mask_plot(cort_mask, '05. Cortical mask, filled', filename='postproc05_cort_filled.png')
+    bone_mask = np.logical_or(trab_mask, bone_mask)
+    if visualize:
+        debug_mask_plot(bone_mask, '06. Bone mask, composed', filename='postproc05_bone_composed_not_filled.png')
+    bone_mask = fill_in_gaps_in_mask(bone_mask, dilation_erosion=10)
+    if visualize:
+        debug_mask_plot(bone_mask, '06. Bone mask, composed', filename='postproc05_bone_composed.png')
+
+    trab_mask = np.logical_and(bone_mask, np.logical_not(cort_mask))
+    # trab_mask = remove_islands_from_mask(trab_mask, erosion_dilation=3)
+    return cort_mask, trab_mask
+    
+    # Step 4: continue with the iterative filter    
