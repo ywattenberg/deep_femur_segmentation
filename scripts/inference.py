@@ -171,11 +171,11 @@ def main(image_path, model_path, output_path, model_type, config, cpu=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_path", type=str, required=True)
-    parser.add_argument("--model_path", type=str, required=True)
-    parser.add_argument("--output_path", type=str, required=True)
-    parser.add_argument("--model_type", type=str, required=True)
-    parser.add_argument("--config_path", type=str, required=False, default="config/segmentation_config.yaml")
+    parser.add_argument("--image_path", "-i", type=str, required=True)
+    parser.add_argument("--model_path",  "-m", type=str, required=True)
+    parser.add_argument("--output_path", "-o", type=str, required=True)
+    parser.add_argument("--model_type", "-t", type=str, required=True)
+    parser.add_argument("--config_path", "-c", type=str, required=False, default="config/cluster_segmentation_config.yaml")
     parser.add_argument("--cpu", action="store_true")
     args = parser.parse_args()
     args.model_type = args.model_type.lower()

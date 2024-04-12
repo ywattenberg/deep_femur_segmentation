@@ -9,44 +9,43 @@ import matplotlib.pyplot as plt
 
 
 def main(path, roi):
-    # Find pcct file
+    # # Find pcct file
     name = path.split("\\")[-1]
     print(f"Processing {name}")
     files = os.listdir(path)
     pcct_file = [file for file in files if file == "cutout_calibration_phantom.nii.gz"]
-    if len(pcct_file) == 0:
-        print(f"Could not find pcct file in {path}")
-        print(f"Name: {name}")
-        return
-    pcct_file = pcct_file[0]
-    pcct_file = os.path.join(path, pcct_file)
-    print(f"Found pcct file: {pcct_file}")
+    # if len(pcct_file) == 0:
+    #     print(f"Could not find pcct file in {path}")
+    #     print(f"Name: {name}")
+    #     return
+    # pcct_file = pcct_file[0]
+    # pcct_file = os.path.join(path, pcct_file)
+    # print(f"Found pcct file: {pcct_file}")
 
-    # Read pcct file
-    image = sitk.ReadImage(pcct_file)
-    print(f"Image shape: {image.GetSize()}")
-    image = sitk.GetArrayFromImage(image)
+    # # Read pcct file
+    # image = sitk.ReadImage(pcct_file)
+    # print(f"Image shape: {image.GetSize()}")
+    # image = sitk.GetArrayFromImage(image)
 
-    min_value = np.min(image)
-    image = None
-    # Transform file
-    with open(os.path.join(path, "TransformParameters.0.txt"), "r") as f:
-        # Find the line with the DefaultPixelValue value (DefaultPixelValue 0)
-        lines = f.readlines()
-        for i, line in enumerate(lines):
-            if "DefaultPixelValue 0" in line :
-                lines[i] = f"(DefaultPixelValue {min_value})\n"
-                print(f"Found line: {lines[i]} replacing with: {min_value}")
-                break
+    # min_value = np.min(image)
+    # image = None
+    # # Transform file
+    # with open(os.path.join(path, "TransformParameters.0.txt"), "r") as f:
+    #     # Find the line with the DefaultPixelValue value (DefaultPixelValue 0)
+    #     lines = f.readlines()
+    #     for i, line in enumerate(lines):
+    #         if "DefaultPixelValue 0" in line :
+    #             lines[i] = f"(DefaultPixelValue {min_value})\n"
+    #             print(f"Found line: {lines[i]} replacing with: {min_value}")
+    #             break
 
-    with open(os.path.join(path, "TransformParameters.1.txt"), "w") as f:
-        f.writelines(lines)
+    # with open(os.path.join(path, "TransformParameters.1.txt"), "w") as f:
+    #     f.writelines(lines)
 
-    # Transform image
-    subprocess.run(["./elastix/transformix", "-in", pcct_file, "-out", path, "-tp", os.path.join(path, "TransformParameters.1.txt")])
+    # # Transform image
+    # subprocess.run(["./elastix/transformix", "-in", pcct_file, "-out", path, "-tp", os.path.join(path, "TransformParameters.1.txt")])
 
     # Read transformed image
-    return
     image = sitk.ReadImage(os.path.join(path, "result.mha"))
     image = sitk.GetArrayFromImage(image)
     #image = image[:, roi[2]:roi[3], roi[0]:roi[1]]
@@ -87,7 +86,7 @@ if __name__ == "__main__":
 
     folders = os.listdir(image_folder_path)
     
-    dict = {4:"", }#6:"", 4:"", 11:""}
+    dict = {"4":[299,858,392,1102], "6":[311,778,384,1110], "10":[377,795,411,1097], "11":[246,824,395,1087],"13":[370,800,309,954]}
 
     
     for key, roi in dict.items():

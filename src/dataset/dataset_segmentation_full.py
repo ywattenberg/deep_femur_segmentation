@@ -79,7 +79,7 @@ class FemurImageSegmentationDataset(Dataset):
             pcct_files = len(os.listdir(PCCT_f))
     
             self.PCCT_paths[i] = os.path.join(PCCT_folder, f"{name}")
-            self.HRpQCT_paths[i] = os.path.join(HRpQCT_folder, f"{name}")
+            self.HRpQCT_paths[i] = os.path.join(HRpQCT_folder, f"mask")
 
             self.slice_from_range[self.PCCT_paths[i]] = (self.length, self.length + pcct_files - self._input_size[0], i)
             self.length +=  pcct_files - self._input_size[0]
@@ -114,17 +114,16 @@ class FemurImageSegmentationDataset(Dataset):
         #         with f.open(f"{i}.npy") as file:
 
         #             HRpQCT_images.append(np.load(file))
-
         for i in range(start, end):
             PCCT_images.append(np.load(os.path.join(PCCT_folder, f"{i}.npy")).astype(self.np_dtype))
-        for i in range(int(start), int(end)):
+        for i in range(int(2*start), int(2*end)):
             Mask.append(np.load(os.path.join(HRpQCT_folder, f"{i}.npy")).astype(self.np_dtype))
         # print(f"Slices {start} to {end} loaded from {PCCT_folder} and {int(start*self._scale_factor[0])} to {int(end*self._scale_factor[0])} from  {HRpQCT_folder}")
         
         missing_pcct = self._input_size[0] - len(PCCT_images)
         missing_hrpqct = self._output_size[0] - len(Mask)
         assert missing_pcct <= 0, "Missing PCCT images must be greater than 0."
-        assert missing_hrpqct <= 0, "Missing HRpQCT images must be greater than 0."
+        assert missing_hrpqct <= 0, f"Missing HRpQCT images must be greater than 0. {missing_hrpqct}"
         PCCT_images = PCCT_images + [np.zeros_like(PCCT_images[0]) for _ in range(missing_pcct)]
         Mask =  Mask + [np.zeros_like(Mask[0]) for _ in range(missing_hrpqct)]
 
@@ -175,7 +174,9 @@ class FemurImageSegmentationDataset(Dataset):
 
         PCCT_images = PCCT_images.to(dtype=self.torch_dtype)
         HRpQCT_images = HRpQCT_images.to(dtype=self.torch_dtype)
-        # print(f"Time to get item: {time.time() - time_at_start}ms")
+        
+        HRpQCT_images = torch.nn.functional.interpolate(HRpQCT_images.unsqueeze(0), size=self._config["input_size"], mode="nearest").squeeze(0)
+        HRpQCT_images = HRpQCT_images > 0.5 # Binarize the mask
         return PCCT_images, HRpQCT_images
 
 

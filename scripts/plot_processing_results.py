@@ -8,18 +8,18 @@ import argparse
 
 def plot_masks():
     folders = ["test copy", "test_2D copy", "test_retina copy"]
-    fig, ax = plt.subplots(2, 5, figsize=(20, 9))
+    fig, ax = plt.subplots(2, 5, figsize=(23, 9))
     ax[0][0].set_title("Input Image", fontsize=30)
     ax[0][1].set_title("Ground Truth", fontsize=30)
     ax[0][2].set_title("3D UNet", fontsize=30)
     ax[0][3].set_title("2D UNet", fontsize=30)
-    ax[0][4].set_title("Retina UNet", fontsize=30)
+    ax[0][4].set_title("Super-resolution UNet", fontsize=30)
     for i in range(2):
         image = sitk.GetArrayFromImage(sitk.ReadImage(f"data/{folders[0]}/input_{i}.nii.gz"))
-        ground_truth = sitk.GetArrayFromImage(sitk.ReadImage(f"data/{folders[0]}/mask_{i}_0.nii.gz"))
-        pred_3d = sitk.GetArrayFromImage(sitk.ReadImage(f"data/{folders[0]}/pred_mask_{i}_0.nii.gz"))
-        pred_2d = sitk.GetArrayFromImage(sitk.ReadImage(f"data/{folders[1]}/pred_mask_{i}_0.nii.gz"))
-        pred_retina = sitk.GetArrayFromImage(sitk.ReadImage(f"data/{folders[2]}/pred_mask_{i}_0.nii.gz"))
+        ground_truth = sitk.GetArrayFromImage(sitk.ReadImage(f"data/{folders[0]}/mask_{i}_1.nii.gz"))
+        pred_3d = sitk.GetArrayFromImage(sitk.ReadImage(f"data/{folders[0]}/pred_mask_{i}_1.nii.gz"))
+        pred_2d = sitk.GetArrayFromImage(sitk.ReadImage(f"data/{folders[1]}/pred_mask_{i}_1.nii.gz"))
+        pred_retina = sitk.GetArrayFromImage(sitk.ReadImage(f"data/{folders[2]}/pred_mask_{i}_1.nii.gz"))
 
         ax[i][0].imshow(image[0], cmap="gray")
         ax[i][0].axis("off")
@@ -42,7 +42,7 @@ def main(pre_dir, post_dir):
     post_dirl = os.listdir(post_dir)
 
     # ["Trab Dice", "Cort Dice", "Trab Jaccard", "Cort Jaccard", "Trab Hausdorff", "Cort Hausdorff"]
-    fig, ax = plt.subplots(4, 5, figsize=(23, 20))
+    fig, ax = plt.subplots(4, 5, figsize=(25, 20))
     ax[0][4].set_title("Trabecular Mask Post.", fontsize=30)
     ax[0][0].set_title("Input Image", fontsize=30)
     ax[0][1].set_title("Cortical Mask", fontsize=30)

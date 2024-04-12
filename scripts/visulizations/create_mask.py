@@ -34,17 +34,17 @@ def safe_image(image, path, spacing=(1,1,1)):
 
 def main(model_path, config, output_path):
     dataset = FemurSegmentationDataset(config=config, split="test")
-    # model = UNet(
-    #     spatial_dims=config["model"]["spatial_dims"],
-    #     in_channels=1,
-    #     out_channels=2 if config["use_cortical_and_trabecular"] else 1,
-    #     channels=config["model"]["features"],
-    #     strides=config["model"]["strides"],
-    #     dropout=config["model"]["dropout"],
-    #     norm=config["model"]["norm"],
-    #     act=config["model"]["activation"],
-    # )
-    model = Retina_UNet(in_channels=1, out_channels_mask=2, out_channels_upsample=1, config=config)
+    model = UNet(
+        spatial_dims=config["model"]["spatial_dims"],
+        in_channels=1,
+        out_channels=1 if config["use_cortical_and_trabecular"] else 1,
+        channels=config["model"]["features"],
+        strides=config["model"]["strides"],
+        dropout=config["model"]["dropout"],
+        norm=config["model"]["norm"],
+        act=config["model"]["activation"],
+    )
+    # model = Retina_UNet(in_channels=1, out_channels_mask=2, out_channels_upsample=1, config=config)
     model.load_state_dict(torch.load(model_path))
     model.eval()
     model.to("cuda")

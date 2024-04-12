@@ -19,7 +19,7 @@ from src.utils.dtypes import TORCH_DTYPES, NUMPY_DTYPES
 def main():
 
     # Get Unet model from Monai
-    CONFIG = yaml.safe_load(open("config/retina_config.yaml", "r"))
+    CONFIG = yaml.safe_load(open("config/config.yaml", "r"))
     if "seed" in CONFIG:
         torch.manual_seed(CONFIG["seed"])
     print(CONFIG)

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.pyplot as plt
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 
 from src.dataset.dataset_segmentation import FemurSegmentationDataset
 from src.dataset.transforms import get_image_segmentation_augmentation
@@ -17,7 +17,7 @@ def plot_overview(dataset, n_samples=4):
     fig.subplots_adjust(hspace=0, wspace=0.2, top=0.95, bottom=0.05, left=0.1, right=0.9)
     x, y, mask = dataset[0]
     ax[0, 0].imshow(x[0,0], cmap="gray")
-    ax[0,0].set_title("PCCT image")
+    ax[0,0].set_title("PCD-CT image")
     ax[0,0].axis("off")
     ax[0,0].set_ylabel("Sample 1")
     ax[0, 1].imshow(y[0,0], cmap="gray")
@@ -41,7 +41,7 @@ def plot_overview(dataset, n_samples=4):
         ax[i, 3].axis("off")
     fig.tight_layout()
     fig.subplots_adjust(hspace=0, wspace=0, top=0.95, bottom=0.05, left=0.1, right=0.9)
-    plt.savefig(f"test/dataset_viz/all.png")
+    plt.savefig(f"all.png")
 
 def plt_augmented_images(dataset, config, n_samples=2):
     aug_stack = get_image_segmentation_augmentation(config, "train")
@@ -52,7 +52,7 @@ def plt_augmented_images(dataset, config, n_samples=2):
     fig.subplots_adjust(hspace=0, wspace=0.2, top=0.95, bottom=0.05, left=0.1, right=0.9)
     x, y, mask = dataset[i]
     ax[0,0].imshow(x[0,0], cmap="gray")
-    ax[0,0].set_title("PCCT image")
+    ax[0,0].set_title("PCD-CT image")
     ax[0,0].axis("off")
     ax[0,1].imshow(y[0,0], cmap="gray")
     for i in range(1, n_samples):
@@ -70,6 +70,7 @@ def main():
     if "seed" in config:
         torch.manual_seed(config["seed"])
     dataset = FemurSegmentationDataset(config, split="test")
+    plot_overview(dataset, n_samples=4)
 
 
 

@@ -12,14 +12,15 @@ def registration_score(fixed_image: sitk.Image | str , moving_image: sitk.Image 
     :return: The registration score.
     """
     if score_function is None:
-        score_function = partial(structural_similarity, win_size=5)
+        #score_function = partial(structural_similarity, win_size=5)
+        score_function = normalized_mutual_information
 
     if isinstance(fixed_image, str):
         fixed_image = sitk.ReadImage(fixed_image)
     if isinstance(moving_image, str):
         moving_image = sitk.ReadImage(moving_image)
-    fixed_image = sitk.GetArrayFromImage(fixed_image)
-    moving_image = sitk.GetArrayFromImage(moving_image)
+    fixed_image = sitk.GetArrayFromImage(fixed_image).astype(np.float64).flatten()
+    moving_image = sitk.GetArrayFromImage(moving_image).astype(np.float64).flatten()
     
     return score_function(fixed_image, moving_image)
 

@@ -6,9 +6,42 @@ import yaml
 import io
 import zipfile
 import matplotlib.pyplot as plt
-from .utils import read_dicom_series, image_to_array, array_to_image
+from skimage.filters import gaussian, threshold_otsu
+from skimage.measure import label as sklabel
+from skimage.measure import regionprops
+
+# from skimage.filters import threshold_otsu
+
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
+from utils import read_dicom_series, image_to_array, array_to_image
+
+
+def threshold_image(image, threshold):
+    pass
+
+def remove_small_components(mask, min_size):
+    labels = sklabel(mask, return_num=False)
+    for region in regionprops(labels):
+        if region.area < min_size:
+            mask[labels == region.label] = 0
+    
+    return mask
+
 
 def main(image_folder_path, roi):
+    """ Script to process HR-pQCT images for dataset creation. This script will:
+        1. Compute the mean and std of the images
+        2. Normalize the images
+        3. Save the images in a zip file
+        
+        Args:
+        
+        image_folder_path: str
+            Path to the folder containing the HR-pQCT images as dicom series
+        roi: list
+            Region of interest to crop the images to. The format is [x1, x2, y1, y2]"""
     # ROI is from downsampled image thus we need to upscale it
     roi = [r*2 for r in roi]
     print(f"Using ROI: {roi}")
@@ -23,18 +56,21 @@ def main(image_folder_path, roi):
     assert len(folders) > 0, "No folders found"
 
     means, stds, vols = [], [], []
-    
+    slice = 0
     for folder in folders:
         image = read_dicom_series(folder)
         image = image_to_array(image)[roi[2]:roi[3], roi[0]:roi[1]]
+        threshold = 700
+        mask = image > threshold
+        # mask = remove_small_components(mask, 20)
+        print(f"Safe to {os.path.join(image_folder_path, f'mask')}")
         print(f"Image shape: {image.shape}")
-        for i in range(0, image.shape[2], 500):
-            plt.imshow(image[:, :, i])
-            plt.savefig(f"{folder}_image_{i}.png")
-        means.append(np.mean(image))
-        stds.append(np.std(image))
-        vols.append(np.prod(image.shape))
-
+        # Create dir
+        os.makedirs(os.path.join(image_folder_path, f"mask"), exist_ok=True)
+        for i in range(image.shape[2]):
+                np.save(os.path.join(image_folder_path, f"mask/{slice + i}.npy"), mask[:, :, i])
+        slice += image.shape[2]
+    return
     overall_mean = np.float64(np.sum([m*v for m, v in zip(means, vols)])/np.sum(vols))
     # Compute biased estimate of variance (i.e. divide by N, not N-1) see link below
     # We divide ESS and GGS immediately by the sum of the volumes, for numerical stability
@@ -94,12 +130,14 @@ def main(image_folder_path, roi):
 
 
 if __name__ == "__main__":
-    image_folder_path = r"data\HR-pQCT"
+    image_folder_path = r"D:\raw_data\HR-pQCT"
 
     folders = os.listdir(image_folder_path)
+    # dict = ,
+    dict = { "1":[395, 835, 320, 1000],"3": [360,800,250,1010], "5":[315,850,375,955], "7":[330,775,285,970], "8":[330, 855, 265,1080], "12":[360,825,230,1000], "4":[299,858,392,1102], "6":[311,778,384,1110], "10":[377,795,411,1097], "11":[246,824,395,1087],"13":[370,800,309,954]}
+    dict = {"1":[395, 835, 320, 1000]}
+    # 2, 4, 6, 9, 10, 11, 13
     
-    dict = {"1":[395, 835, 320, 1000],"3": [360,800,250,1010], "5":[315,850,375,955], "7":[330,775,285,970], "8":[330, 855, 265,1080], "12":[360,825,230,1000]}
-    dict = {"8":[330, 855, 265,1080]}
     
     for key, roi in dict.items():
         sample = [folder for folder in folders if folder.startswith(f"{key}_")]
